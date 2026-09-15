@@ -44,7 +44,7 @@ const TM_ICONS = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
 <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/><path d="M9 3v15M15 6v15"/></symbol>
 </svg>`;
 
-const TM_LOGO_SVG = `<svg viewBox="0 0 40 40" width="38" height="38"><defs><linearGradient id="tmLg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8dff"/><stop offset="0.5" stop-color="#8b6bf0"/><stop offset="1" stop-color="#f2684f"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#tmLg)"/><path d="M8 24c4-9 12-13 18-14" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".85"/><path d="M9 15c2 0 3.5-.5 5-2M11 19c1.6 0 3-.6 4-1.8" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".7"/><circle cx="27" cy="12" r="2.6" fill="#fff"/><path d="M11 25l16-8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const TM_LOGO_SVG = `<img src="uploads/avatars/Icon.png" alt="TripMate" width="38" height="38" style="border-radius:10px;object-fit:cover;display:block">`;
 
 // ─────────────────────────────────────────────────────────────
 // STATE — simple localStorage-backed store
@@ -148,7 +148,7 @@ function tmRenderSidebar(active) {
   const initials = user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   const avatarHtml = user.avatar
     ? `<img src="${user.avatar}" alt="${user.name}">`
-    : `<img src="uploads/avatars/avatar_3_1788970879.jpg" alt="${user.name}" onerror="this.outerHTML='${initials}'">`;
+    : `<img src="uploads/avatars/avatar_3_1788970879.jpg" alt="${user.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:13px;font-weight:700">${initials}</span>`;
 
   const items = TM_NAV.map(n => `
     <a class="nav-item${n.key === active ? ' active' : ''}" href="${n.href}">
