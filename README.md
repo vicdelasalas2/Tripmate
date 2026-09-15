@@ -9,7 +9,7 @@ A fully static, client-side travel planning dashboard built with pure **HTML, CS
 ## 🌐 Live Demo
 
 [> Deploy to GitHub Pages and paste your URL here.  
-> Example: `https://yourusername.github.io/tripmate`](https://vicdelasalas2.github.io/Tripmate/)
+https://vicdelasalas2.github.io/Tripmate/
 
 ---
 
