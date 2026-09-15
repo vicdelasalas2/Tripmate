@@ -8,8 +8,7 @@ A fully static, client-side travel planning dashboard built with pure **HTML, CS
 
 ## 🌐 Live Demo
 
-> Deploy to GitHub Pages and paste your URL here.  
-> Example: `https://yourusername.github.io/tripmate`
+https://vicdelasalas2.github.io/
 
 ---
 
@@ -29,66 +28,6 @@ A fully static, client-side travel planning dashboard built with pure **HTML, CS
 | 🔍 **Global Search** | Searches pages, trips, and bookings instantly |
 | 📱 **Responsive** | Fully mobile-friendly with slide-out sidebar and touch support |
 
----
-
-## 🚀 Getting Started
-
-### Run Locally with XAMPP
-
-1. Copy the `tripmate-static` folder into your XAMPP `htdocs` directory:
-   ```
-   C:\xampp\htdocs\tripmate-static\
-   ```
-2. Start Apache in the XAMPP Control Panel.
-3. Open your browser and go to:
-   ```
-   http://localhost/tripmate-static/
-   ```
-
-### Run Locally without a Server
-
-Just open `index.html` directly in your browser — no server required since everything is client-side.
-
----
-
-## 🌍 Deploy to GitHub Pages
-
-### Step 1 — Create a GitHub repository
-
-1. Go to [github.com/new](https://github.com/new)
-2. Name your repo (e.g. `tripmate`)
-3. Set visibility to **Public**
-4. Click **Create repository**
-
-### Step 2 — Push your files
-
-```bash
-cd path/to/tripmate-static
-
-git init
-git add .
-git commit -m "Initial commit — TripMate static app"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
-### Step 3 — Enable GitHub Pages
-
-1. Go to your repo on GitHub
-2. Click **Settings** → **Pages**
-3. Under **Source**, select `Deploy from a branch`
-4. Choose branch: `main`, folder: `/ (root)`
-5. Click **Save**
-
-Your site will be live at:
-```
-https://YOUR_USERNAME.github.io/YOUR_REPO/
-```
-
-> It may take 1–2 minutes for the first deployment to go live.
-
----
 
 ## 🤖 AI Chatbot Setup
 
@@ -99,7 +38,7 @@ The chatbot uses the **Google Gemini API** — free to use with a Google account
 1. Visit [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 2. Sign in with your Google account
 3. Click **Create API key**
-4. Copy the key (it starts with `AIza...`)
+4. Copy this key (AQ.Ab8RN6I7fCazZh34kElqu0mqQiG05_OH-lmmOK_QKqZa3qXxWg)
 
 ### Set the key in TripMate
 
