@@ -2,6 +2,13 @@
 
 const CHATBOT_KEY = 'tripmate_gemini_key';
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
+
+// ── DEFAULT KEY ────────────────────────────────────────────────
+// Paste your Gemini API key here as a fallback.
+// Get a free key at: https://aistudio.google.com/app/apikey
+// The user can also override this via the ⚙️ button in the chat.
+const GEMINI_KEY_DEFAULT = 'AQ.Ab8RN6I7fCazZh34kElqu0mqQiG05_OH-lmmOK_QKqZa3qXxWg';
+// ──────────────────────────────────────────────────────────────
 const GEMINI_MODELS = [
   'gemini-2.5-flash-lite',   // fastest, cheapest — try first
   'gemini-2.5-flash',        // best price-performance
@@ -16,7 +23,7 @@ const GEMINI_MODELS = [
 let chatOpen       = false;
 let chatHistory    = [];   // { role: 'user'|'model', parts: [{text}] }
 let isTyping       = false;
-let geminiApiKey   = localStorage.getItem(CHATBOT_KEY) || '';
+let geminiApiKey = localStorage.getItem(CHATBOT_KEY) || GEMINI_KEY_DEFAULT;
 
 function loadChatHistory() {
   try {
@@ -123,7 +130,19 @@ function toggleChat() {
 function checkApiKey() {
   const notice = document.getElementById('chatKeyNotice');
   if (!notice) return;
+  // Show the notice if no key is stored at all
   notice.style.display = geminiApiKey ? 'none' : 'flex';
+}
+
+// Called after an auth error to force the notice back on and prompt the user
+function handleAuthError() {
+  // Clear the user-stored key since it's invalid
+  localStorage.removeItem(CHATBOT_KEY);
+  // Fall back to default or empty
+  geminiApiKey = GEMINI_KEY_DEFAULT || '';
+  const notice = document.getElementById('chatKeyNotice');
+  if (notice) notice.style.display = 'flex';
+  promptApiKey();
 }
 
 function promptApiKey() {
@@ -218,9 +237,15 @@ async function sendChatMessage() {
   } catch (err) {
     typingEl.remove();
     const errMsg = err.message || 'Something went wrong. Please try again.';
-    body.appendChild(buildChatBubble('bot', `⚠️ ${errMsg}`, true));
+    body.appendChild(buildChatBubble('bot', errMsg, true));
     scrollChatToBottom();
-    showToast(errMsg, 'error');
+    // If it's an auth/key error, clear the stored key and re-prompt
+    const isAuthErr = errMsg.includes('Invalid') || errMsg.includes('authentication') || errMsg.includes('credential') || errMsg.includes('API key');
+    if (isAuthErr) {
+      setTimeout(() => handleAuthError(), 800);
+    } else {
+      showToast(errMsg.replace(/^[❌⏳]\s*/, ''), 'error');
+    }
   } finally {
     isTyping = false;
     updateChatStatus('Your travel assistant');
@@ -267,23 +292,29 @@ async function callGemini(userText) {
       });
       const data = await res.json();
 
-      if (res.status === 400 && data?.error?.message?.toLowerCase().includes('api key')) {
-        throw new Error('Invalid API key. Please check your Gemini API key and try again.');
+      if (res.status === 401 || (data?.error?.message || '').toLowerCase().includes('invalid authentication') || (data?.error?.message || '').toLowerCase().includes('oauth')) {
+        throw new Error('❌ Invalid or missing API key. Click ⚙️ API Key below to set your Gemini key. Get one free at aistudio.google.com/app/apikey');
+      }
+      if (res.status === 400 && (data?.error?.message || '').toLowerCase().includes('api key')) {
+        throw new Error('❌ Invalid API key. Please check your Gemini key and try again.');
       }
       if (res.status === 403) {
-        throw new Error('API key not authorized. Make sure your Gemini key is valid and has the Generative Language API enabled.');
+        throw new Error('❌ API key not authorized. Make sure your Gemini key is valid. Get one at aistudio.google.com/app/apikey');
       }
       if (res.status === 429) {
-        lastError = new Error('Rate limit reached. Please wait a moment and try again.');
+        lastError = new Error('⏳ Rate limit reached. Please wait a moment and try again.');
         continue;
       }
       if (res.status === 404 || (data?.error?.message || '').includes('not found')) {
-        // Model not available — try next one silently
         lastError = new Error(data?.error?.message || `Model not available (${res.status})`);
         continue;
       }
       if (!res.ok) {
-        lastError = new Error(data?.error?.message || `API error ${res.status}`);
+        const msg = data?.error?.message || '';
+        if (msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('credential')) {
+          throw new Error('❌ Authentication failed. Click ⚙️ API Key to set a valid Gemini key.');
+        }
+        lastError = new Error(msg || `API error ${res.status}`);
         continue;
       }
 
