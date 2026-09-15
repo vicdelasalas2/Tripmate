@@ -36,10 +36,10 @@ The chatbot uses the **Google Gemini API** — free to use with a Google account
 
 ### Get a free API key
 
-1. Visit [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+1. Visit (https://aistudio.google.com/app/apikey)
 2. Sign in with your Google account
 3. Click **Create API key**
-4. Copy the key: AQ.Ab8RN6I7fCazZh34kElqu0mqQiG05_OH-lmmOK_QKqZa3qXxWg
+4. Copy the key
 
 ### Set the key in TripMate
 
