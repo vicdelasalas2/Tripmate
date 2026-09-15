@@ -93,7 +93,7 @@ svg { display: block; }
 }
 .sidebar-help .icon { stroke: var(--coral-500); width: 17px; height: 17px; }
 .sidebar-profile { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
-.sidebar-avatar { width: 34px; height: 34px; border-radius: 50%; background: #2a3768; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; overflow: hidden; }
+.sidebar-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #3f4fc9, #7c5cf0); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; overflow: hidden; }
 .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .sidebar-profile-name { font-size: 13.5px; font-weight: 600; color: #fff; flex: 1; }
 .sidebar-logout {

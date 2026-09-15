@@ -147,8 +147,8 @@ function tmRenderSidebar(active) {
   const user = state.user;
   const initials = user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   const avatarHtml = user.avatar
-    ? `<img src="${user.avatar}" alt="${user.name}">`
-    : `<img src="uploads/avatars/avatar_3_1788970879.jpg" alt="${user.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" style="width:100%;height:100%;object-fit:cover;border-radius:50%"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:13px;font-weight:700">${initials}</span>`;
+    ? `<img src="${user.avatar}" alt="${user.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : `<span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.02em;line-height:1">${initials}</span>`;
 
   const items = TM_NAV.map(n => `
     <a class="nav-item${n.key === active ? ' active' : ''}" href="${n.href}">

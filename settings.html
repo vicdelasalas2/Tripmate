@@ -63,8 +63,10 @@ function renderSettings() {
         <div class="card card-pad anim-fade-up">
           <div class="settings-section-title">Profile Picture</div>
           <div class="avatar-upload">
-            <div class="avatar-preview" id="avatarPreview">
-              ${user.avatar ? `<img src="${user.avatar}" alt="Avatar">` : initials}
+            <div class="avatar-preview" id="avatarPreview" style="background:linear-gradient(135deg,#3f4fc9,#7c5cf0);color:#fff;font-size:22px;font-weight:800">
+              ${user.avatar
+                ? `<img src="${user.avatar}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                : `<span>${initials}</span>`}
             </div>
             <div>
               <button class="btn btn-outline btn-sm" onclick="document.getElementById('avatarFile').click()">Change Avatar</button>
@@ -426,9 +428,7 @@ function refreshSidebarAvatar(user) {
   if (user.avatar) {
     avatarEl.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
-    avatarEl.innerHTML = `<img src="uploads/avatars/avatar_3_1788970879.jpg" alt="${user.name}"
-      style="width:100%;height:100%;object-fit:cover;border-radius:50%"
-      onerror="this.style.display='none';this.parentElement.textContent='${initials}'">`;
+    avatarEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.02em;line-height:1">${initials}</span>`;
   }
   // Also update the name in case it changed
   const nameEl = document.querySelector('.sidebar-profile-name');
