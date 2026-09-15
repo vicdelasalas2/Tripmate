@@ -3,11 +3,11 @@
 const CHATBOT_KEY = 'tripmate_gemini_key';
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 const GEMINI_MODELS = [
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-flash',
-  'gemini-1.0-pro'
+  'gemini-2.5-flash-lite',   // fastest, cheapest — try first
+  'gemini-2.5-flash',        // best price-performance
+  'gemini-3.5-flash',        // previous-gen stable
+  'gemini-3.6-flash',        // previous-gen stable
+  'gemini-3.7-flash',        // fallback
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -268,10 +268,18 @@ async function callGemini(userText) {
       const data = await res.json();
 
       if (res.status === 400 && data?.error?.message?.toLowerCase().includes('api key')) {
-        throw new Error('Invalid API key. Please check your Gemini API key.');
+        throw new Error('Invalid API key. Please check your Gemini API key and try again.');
+      }
+      if (res.status === 403) {
+        throw new Error('API key not authorized. Make sure your Gemini key is valid and has the Generative Language API enabled.');
       }
       if (res.status === 429) {
-        lastError = new Error('Rate limit exceeded. Please wait a moment and try again.');
+        lastError = new Error('Rate limit reached. Please wait a moment and try again.');
+        continue;
+      }
+      if (res.status === 404 || (data?.error?.message || '').includes('not found')) {
+        // Model not available — try next one silently
+        lastError = new Error(data?.error?.message || `Model not available (${res.status})`);
         continue;
       }
       if (!res.ok) {
