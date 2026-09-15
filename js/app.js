@@ -35,7 +35,11 @@ const TM_ICONS = `<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
-<symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M12 2v4M8 11V9a4 4 0 0 1 8 0v2"/><circle cx="9" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-bot" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="3"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><circle cx="9" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1.2" fill="currentColor" stroke="none"/><path d="M9 18h6"/><path d="M12 2v2"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2.3 4 6.3 4c2.2 0 3.7 1.3 4.7 2.6C12 5.3 13.5 4 15.7 4c4 0 5.8 4 4.3 7.7C19.5 16.4 12 21 12 21z"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7.1l1.4-1.4"/><circle cx="12" cy="12" r="4"/></symbol>
 <symbol id="i-clip" viewBox="0 0 24 24"><path d="M21 12.5 12.9 20.6a5 5 0 0 1-7.1-7.1L13.6 5.7a3.5 3.5 0 0 1 5 5L10.8 18.5a2 2 0 0 1-2.8-2.8L15.4 8"/></symbol>
 <symbol id="i-map" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6z"/><path d="M9 3v15M15 6v15"/></symbol>
 </svg>`;
@@ -144,7 +148,7 @@ function tmRenderSidebar(active) {
   const initials = user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   const avatarHtml = user.avatar
     ? `<img src="${user.avatar}" alt="${user.name}">`
-    : initials;
+    : `<img src="uploads/avatars/avatar_3_1788970879.jpg" alt="${user.name}" onerror="this.outerHTML='${initials}'">`;
 
   const items = TM_NAV.map(n => `
     <a class="nav-item${n.key === active ? ' active' : ''}" href="${n.href}">
