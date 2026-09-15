@@ -8,7 +8,7 @@ A fully static, client-side travel planning dashboard built with pure **HTML, CS
 
 ## 🌐 Live Demo
 
-https://vicdelasalas2.github.io/
+https://vicdelasalas2.github.io/Tripmate/
 
 ---
 
