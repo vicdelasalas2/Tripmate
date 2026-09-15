@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packages — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page" id="pkgPage"></div>
+  </div>
+</div>
+
+<!-- Package Detail Modal -->
+<div class="tm-modal-overlay" id="pkgModal">
+  <div class="tm-modal tm-modal-wide" id="pkgModalBox">
+    <button class="tm-modal-close" onclick="closePkgModal()">&times;</button>
+    <div id="pkgModalContent"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('packages', { cta: { label:'Browse Packages', href:'packages.html' } });
+
+function renderPackages() {
+  const state    = getState();
+  const packages = state.packages;
+  const featured = packages.find(p => p.featured);
+  const regular  = packages.filter(p => !p.featured);
+  const popular  = regular.slice(0, 3);
+  const recs     = regular.slice(3, 5);
+
+  let html = `
+  <div class="page-title anim-fade-up">Packages</div>
+  <div class="grid g-2col">
+    <div>`;
+
+  // Featured
+  if (featured) {
+    html += `
+    <div class="card feat-pkg anim-fade-up delay-1">
+      <div class="feat-img">
+        <img src="${escHtml(featured.image)}" alt="${escHtml(featured.name)}" loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&q=80'">
+      </div>
+      <div class="feat-body">
+        <span class="feat-tag">⭐ FEATURED PACKAGE</span>
+        <div class="feat-title">${escHtml(featured.name)}</div>
+        <div class="feat-loc">
+          <svg style="width:13px;height:13px;stroke:var(--text-muted);fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
+          ${escHtml(featured.destination)}
+        </div>
+        <div class="feat-perks">
+          <span>✓ All-Inclusive</span><span>✓ Luxury Spa</span><span>✓ Water Sports</span>
+        </div>
+        <div class="feat-price-row">
+          <div class="feat-price">$${featured.price.toLocaleString()}<small>per person</small></div>
+          <span class="badge badge-blue">${escHtml(featured.duration)}</span>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="btn btn-outline" style="flex:1" onclick="showPkgDetail(${featured.id})">View Details</button>
+          <a href="new-booking.html?type=Tour+%2F+Excursion&provider=${encodeURIComponent(featured.name)}" class="btn btn-primary" style="flex:1">Book Now</a>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Regular cards grid
+  html += `<div class="pkg-cards anim-fade-up delay-2">`;
+  regular.slice(0, 2).forEach(pkg => {
+    html += `
+    <div class="card pkg-card card-hover" onclick="showPkgDetail(${pkg.id})" style="cursor:pointer;overflow:hidden">
+      <img src="${escHtml(pkg.image)}" alt="${escHtml(pkg.name)}" loading="lazy"
+        onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=500&q=80'">
+      <div class="pkg-card-body">
+        <div class="pkg-name">${escHtml(pkg.name)}</div>
+        <div class="pkg-meta">
+          <span class="star">★ ${pkg.rating.toFixed(1)}</span> | ${escHtml(pkg.destination)}
+        </div>
+        <div class="pkg-price-row">
+          <div class="pkg-price">$${pkg.price.toLocaleString()}</div>
+          <a href="new-booking.html?type=Tour+%2F+Excursion&provider=${encodeURIComponent(pkg.name)}"
+             class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Book Now</a>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`; // pkg-cards
+
+  html += `</div>`; // main left column
+
+  // RIGHT SIDEBAR
+  html += `
+  <div class="stack">
+    <div class="card card-pad anim-slide-r delay-1">
+      <div class="side-h">Popular Packages</div>
+      ${popular.map(pkg => `
+      <div class="pop-row" onclick="showPkgDetail(${pkg.id})">
+        <img src="${escHtml(pkg.image)}" alt="${escHtml(pkg.name)}" loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=100&q=80'">
+        <div>
+          <div class="pop-name">${escHtml(pkg.name)}</div>
+          <div class="pop-meta">★ ${pkg.rating.toFixed(1)} · ${escHtml(pkg.destination)}</div>
+        </div>
+        <div class="pop-price">$${pkg.price.toLocaleString()}</div>
+      </div>`).join('')}
+    </div>
+
+    <div class="card card-pad anim-slide-r delay-2">
+      <div class="side-h">Recommended For You</div>
+      ${recs.map(pkg => `
+      <div class="rec-row" onclick="showPkgDetail(${pkg.id})">
+        <img src="${escHtml(pkg.image)}" alt="${escHtml(pkg.name)}" loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1488085061387-422e29b40080?w=100&q=80'">
+        <div>
+          <div class="rec-name">${escHtml(pkg.name)}</div>
+          <div class="rec-desc">${escHtml(pkg.description)}</div>
+          <div class="rec-price">$${pkg.price.toLocaleString()}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <!-- All packages list -->
+    <div class="card card-pad anim-slide-r delay-3">
+      <div class="side-h">All Destinations</div>
+      ${packages.map(pkg => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .14s;border-radius:6px;padding-left:4px;margin-left:-4px" onclick="showPkgDetail(${pkg.id})" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+        <div>
+          <div style="font-size:13px;font-weight:700">${escHtml(pkg.name)}</div>
+          <div style="font-size:11.5px;color:var(--text-muted)">${escHtml(pkg.destination)} · ${escHtml(pkg.duration)}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700">$${pkg.price.toLocaleString()}</div>
+      </div>`).join('')}
+    </div>
+  </div>`; // sidebar
+
+  html += `</div>`; // g-2col
+
+  document.getElementById('pkgPage').innerHTML = html;
+}
+
+function showPkgDetail(id) {
+  const state = getState();
+  const pkg   = state.packages.find(p => p.id === id);
+  if (!pkg) return;
+  document.getElementById('pkgModalContent').innerHTML = `
+    <img src="${escHtml(pkg.image)}" alt="${escHtml(pkg.name)}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:18px"
+      onerror="this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&q=80'">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+      <div>
+        <div style="font-size:19px;font-weight:800;margin-bottom:4px">${escHtml(pkg.name)}</div>
+        <div style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+          📍 ${escHtml(pkg.destination)} &nbsp;·&nbsp; ★ ${pkg.rating.toFixed(1)} &nbsp;·&nbsp; ${escHtml(pkg.duration)}
+        </div>
+      </div>
+      <div style="font-size:24px;font-weight:800">$${pkg.price.toLocaleString()}<span style="font-size:11px;font-weight:500;color:var(--text-faint)">/person</span></div>
+    </div>
+    <p style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin-bottom:20px">${escHtml(pkg.description)}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <span class="badge badge-blue">✓ All-Inclusive</span>
+      <span class="badge badge-green">✓ Expert Guides</span>
+      <span class="badge badge-amber">✓ Flexible Cancellation</span>
+    </div>
+    <div class="tm-modal-footer">
+      <button class="btn btn-outline" onclick="closePkgModal()">Close</button>
+      <a href="new-booking.html?type=Tour+%2F+Excursion&provider=${encodeURIComponent(pkg.name)}" class="btn btn-primary">Book This Package</a>
+    </div>`;
+  document.getElementById('pkgModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePkgModal() {
+  document.getElementById('pkgModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+renderPackages();
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Itineraries — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page">
+      <div class="page-title anim-fade-up">My Itineraries</div>
+      <div id="itinContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Activity Modal -->
+<div class="tm-modal-overlay" id="addActivityModal">
+  <div class="tm-modal">
+    <button class="tm-modal-close" onclick="closeAddActivity()">&times;</button>
+    <div class="tm-modal-icon" style="background:var(--blue-100)">
+      <svg class="icon" style="stroke:var(--blue-600)" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <div class="tm-modal-h">Add Activity</div>
+    <div class="tm-modal-sub">Add a new activity to this day</div>
+    <input type="hidden" id="actTripId">
+    <input type="hidden" id="actDayNum">
+    <div class="field"><label>Time <span class="req">*</span></label><input type="text" id="actTime" placeholder="e.g. 09:00 AM"></div>
+    <div class="field"><label>Title <span class="req">*</span></label><input type="text" id="actTitle" placeholder="e.g. Golden Gate Walk"></div>
+    <div class="field"><label>Location</label><input type="text" id="actLocation" placeholder="e.g. Golden Gate Bridge"></div>
+    <div class="field"><label>Description</label><textarea id="actDesc" rows="3" placeholder="Notes about this activity…"></textarea></div>
+    <div class="field"><label>Icon</label>
+      <select id="actIcon">
+        <option value="i-pin">📍 Location / Sightseeing</option>
+        <option value="i-plane">✈️ Flight / Transport</option>
+        <option value="i-bed">🏨 Hotel / Accommodation</option>
+        <option value="i-food">🍽️ Food / Restaurant</option>
+        <option value="i-compass">🧭 Tour / Excursion</option>
+        <option value="i-star">⭐ Experience</option>
+      </select>
+    </div>
+    <div class="tm-modal-footer">
+      <button class="btn btn-outline" onclick="closeAddActivity()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveActivity()">Add Activity</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('itineraries', { cta: { label:'+ New Trip', href:'new-trip.html' } });
+
+const DAY_LABELS = ['Departure & Hotel Check-In','City Sightseeing','Tech Hub & Museum Tour','Free Day','Departure Day'];
+const ICON_MAP   = { 'i-plane':'✈️','i-bed':'🏨','i-food':'🍽️','i-pin':'📍','i-compass':'🧭','i-star':'⭐','i-info':'ℹ️','i-map':'🗺️' };
+
+let selectedTripId = null;
+
+function renderItineraries() {
+  const state = getState();
+  const trips = state.trips;
+  if (!trips.length) {
+    document.getElementById('itinContent').innerHTML = `
+      <div class="card card-pad" style="text-align:center;padding:48px">
+        <p style="color:var(--text-muted);margin-bottom:16px">No trips yet. Create your first trip!</p>
+        <a href="new-trip.html" class="btn btn-primary">Create New Trip</a>
+      </div>`;
+    return;
+  }
+
+  // Determine selected trip
+  const params = new URLSearchParams(window.location.search);
+  const paramTripId = parseInt(params.get('trip'));
+  if (!selectedTripId) selectedTripId = paramTripId || trips[0].id;
+  const trip = trips.find(t => t.id === selectedTripId) || trips[0];
+  if (trip) selectedTripId = trip.id;
+
+  const activities = (state.activities || []).filter(a => a.tripId === selectedTripId);
+  const byDay = {};
+  activities.forEach(a => {
+    if (!byDay[a.dayNumber]) byDay[a.dayNumber] = [];
+    byDay[a.dayNumber].push(a);
+  });
+  const days = Object.keys(byDay).map(Number).sort((a,b)=>a-b);
+
+  // Toolbar
+  const tripOptions = trips.map(t => `<option value="${t.id}" ${t.id===selectedTripId?'selected':''}>${escHtml(t.name)}${t.startDate?' · '+fmtDate(t.startDate):''}</option>`).join('');
+
+  let html = `
+  <div class="itin-toolbar anim-fade-up" style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap">
+    <div style="position:relative;display:inline-block">
+      <select onchange="changeTripSelection(this.value)" style="appearance:none;-webkit-appearance:none;background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px 36px 10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;outline:none">${tripOptions}</select>
+      <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted)">▾</span>
+    </div>
+    <a href="new-trip.html?edit=${selectedTripId}" class="btn btn-outline">
+      <svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="m14.5 7 3 3"/></svg>Edit
+    </a>
+    <div style="flex:1"></div>
+    <button class="btn btn-outline-blue" onclick="exportPDF()">
+      <svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 19h16"/></svg>Export PDF
+    </button>
+  </div>`;
+
+  if (!days.length) {
+    html += `<div class="card card-pad" style="text-align:center;padding:32px;color:var(--text-faint)">
+      No activities added yet. <a href="trip-builder.html" style="color:var(--blue-600);font-weight:600">Open Trip Builder →</a>
+    </div>`;
+    document.getElementById('itinContent').innerHTML = html;
+    return;
+  }
+
+  days.forEach((dayNum, idx) => {
+    const acts = byDay[dayNum].sort((a,b)=>a.sortOrder-b.sortOrder);
+    const label = DAY_LABELS[dayNum-1] || 'Day ' + dayNum;
+    const firstDate = acts[0]?.date ? fmtDate(acts[0].date) : '';
+    html += `
+    <div class="acc-item ${idx===0?'open':''} anim-fade-up delay-${Math.min(idx+1,6)}" id="day-${dayNum}">
+      <button class="acc-head">
+        <span class="day-label">Day ${dayNum}:</span>
+        <span class="day-title">${label}</span>
+        ${firstDate?`<span class="day-date">&mdash; ${firstDate}</span>`:''}
+        <svg class="icon chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="acc-body">
+        <div class="timeline">
+          ${acts.map((act, i) => `
+          <div class="tl-row">
+            <div class="tl-time">${escHtml(act.timeSlot)}</div>
+            <div class="tl-rail">
+              <div class="tl-dot"></div>
+              ${i < acts.length-1 ? '<div class="tl-line"></div>' : ''}
+            </div>
+            <div class="tl-icon">
+              <span style="font-size:14px">${ICON_MAP[act.icon]||'📍'}</span>
+            </div>
+            <div class="tl-body" style="flex:1;padding-top:2px">
+              <h4>${escHtml(act.title)}</h4>
+              <p>${act.location?`<span class="loc">${escHtml(act.location)}</span><br>`:''}${escHtml(act.description||'')}</p>
+              <button onclick="deleteActivity(${act.id})" style="background:none;border:none;font-size:11.5px;color:var(--text-faint);cursor:pointer;padding:4px 0;margin-top:2px">✕ Remove</button>
+            </div>
+          </div>`).join('')}
+          <button class="add-activity-link" onclick="openAddActivity(${selectedTripId}, ${dayNum})">+ Add Activity</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Add new day
+  const nextDay = days.length ? Math.max(...days) + 1 : 1;
+  html += `<div class="builder-day-add" onclick="addNewDay(${nextDay})">+ Add Day ${nextDay}</div>`;
+
+  document.getElementById('itinContent').innerHTML = html;
+  tmInitAccordions();
+}
+
+function changeTripSelection(id) {
+  selectedTripId = parseInt(id);
+  renderItineraries();
+}
+
+function openAddActivity(tripId, dayNum) {
+  document.getElementById('actTripId').value = tripId;
+  document.getElementById('actDayNum').value = dayNum;
+  document.getElementById('actTime').value = '';
+  document.getElementById('actTitle').value = '';
+  document.getElementById('actLocation').value = '';
+  document.getElementById('actDesc').value = '';
+  document.getElementById('actIcon').value = 'i-pin';
+  document.getElementById('addActivityModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAddActivity() {
+  document.getElementById('addActivityModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function saveActivity() {
+  const tripId = parseInt(document.getElementById('actTripId').value);
+  const dayNum = parseInt(document.getElementById('actDayNum').value);
+  const time   = document.getElementById('actTime').value.trim();
+  const title  = document.getElementById('actTitle').value.trim();
+  const loc    = document.getElementById('actLocation').value.trim();
+  const desc   = document.getElementById('actDesc').value.trim();
+  const icon   = document.getElementById('actIcon').value;
+
+  if (!title) { showToast('Title is required', 'error'); return; }
+  const state = getState();
+  const newAct = {
+    id: state.nextActivityId, tripId, dayNumber: dayNum,
+    date: '', timeSlot: time || '—', icon, title, description: desc, location: loc,
+    sortOrder: (state.activities.filter(a=>a.tripId===tripId&&a.dayNumber===dayNum).length) + 1
+  };
+  state.activities.push(newAct);
+  state.nextActivityId++;
+  setState(state);
+  closeAddActivity();
+  renderItineraries();
+  showToast(`"${title}" added to Day ${dayNum}`, 'success');
+}
+
+function deleteActivity(id) {
+  const state = getState();
+  const act   = state.activities.find(a => a.id === id);
+  if (!act) return;
+  showConfirm(`Remove "${act.title}" from the itinerary?`, function() {
+    const s = getState();
+    s.activities = s.activities.filter(a => a.id !== id);
+    setState(s);
+    renderItineraries();
+    showToast('Activity removed', 'info');
+  });
+}
+
+function addNewDay(dayNum) {
+  openAddActivity(selectedTripId, dayNum);
+}
+
+function exportPDF() {
+  showToast('Preparing PDF…', 'info');
+  setTimeout(() => { window.print(); }, 400);
+}
+
+renderItineraries();
+</script>
+</body>
+</html>

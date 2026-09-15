@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page" style="padding-bottom:0">
+      <div class="page-title anim-fade-up" style="display:flex;align-items:center">
+        Messages
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="startNewMessage()">
+          <svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Message
+        </button>
+      </div>
+
+      <div class="msg-shell anim-fade-up delay-1" id="msgShell">
+        <!-- Conversation List -->
+        <div class="conv-list" id="convList">
+          <div class="conv-search">
+            <svg class="icon" style="stroke:var(--text-faint);fill:none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="convSearch" placeholder="Search messages…" oninput="filterConvs()">
+          </div>
+          <div id="convListItems"></div>
+        </div>
+
+        <!-- Chat Column -->
+        <div class="chat-col" id="chatCol">
+          <div id="chatHead" class="chat-head"></div>
+          <div id="chatMessages" class="chat-body"></div>
+          <div class="chat-input-bar">
+            <button class="topbar-icon-btn" style="flex-shrink:0" title="Attach file" onclick="showToast('File attachments coming soon!','info')">
+              <svg style="width:16px;height:16px;stroke:var(--text-muted);fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M21 12.5 12.9 20.6a5 5 0 0 1-7.1-7.1L13.6 5.7a3.5 3.5 0 0 1 5 5L10.8 18.5a2 2 0 0 1-2.8-2.8L15.4 8"/></svg>
+            </button>
+            <input type="text" id="msgInput" placeholder="Type a message…"
+              onkeydown="if(event.key==='Enter')sendMessage()">
+            <button class="btn btn-primary btn-sm" onclick="sendMessage()">
+              <svg style="width:14px;height:14px;fill:white" viewBox="0 0 24 24"><path d="m3 11 18-7-7 18-3-8z"/></svg>Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Message Modal -->
+<div class="tm-modal-overlay" id="newMsgModal">
+  <div class="tm-modal">
+    <button class="tm-modal-close" onclick="closeNewMsg()">&times;</button>
+    <div class="tm-modal-icon" style="background:var(--blue-100)">
+      <svg class="icon" style="stroke:var(--blue-600)" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    </div>
+    <div class="tm-modal-h">New Message</div>
+    <div class="tm-modal-sub">Start a new conversation</div>
+    <div class="field"><label>To</label>
+      <select id="newMsgTo">
+        <option value="TripMate Support">TripMate Support</option>
+        <option value="Delta Airlines">Delta Airlines</option>
+        <option value="Grand Hyatt">Grand Hyatt</option>
+        <option value="Travel Agent">Travel Agent</option>
+      </select>
+    </div>
+    <div class="field"><label>Message <span class="req">*</span></label>
+      <textarea id="newMsgText" rows="4" placeholder="Write your message…"></textarea>
+    </div>
+    <div class="tm-modal-footer">
+      <button class="btn btn-outline" onclick="closeNewMsg()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendNewMessage()">Send Message</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('messages', { cta: { label:'+ New Message', href:'messages.html' } });
+
+let activeConv = 'TripMate Support';
+
+const CONVERSATIONS = [
+  { name:'TripMate Support', avatar:'TS', color:'#059669', online:true,  lastMsg:'Absolutely! Your check-in is at 3:00 PM.',            time:'10:37 AM' },
+  { name:'Delta Airlines',   avatar:'DA', color:'#3b63e0', online:false, lastMsg:'Your boarding pass is ready to download.',             time:'9:15 AM'  },
+  { name:'Grand Hyatt',      avatar:'GH', color:'#d9982a', online:true,  lastMsg:'We have upgraded your room to a suite.',               time:'8:00 AM'  },
+  { name:'Travel Alerts',    avatar:'TA', color:'#c96f1f', online:false, lastMsg:'Clear skies expected for your departure.',             time:'7:45 AM'  },
+  { name:'Travel Agent',     avatar:'AG', color:'#7c5cf0', online:true,  lastMsg:'Your itinerary has been confirmed. Have a great trip!', time:'Yesterday' }
+];
+
+function renderConvList(filter = '') {
+  const convs = filter
+    ? CONVERSATIONS.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()) || c.lastMsg.toLowerCase().includes(filter.toLowerCase()))
+    : CONVERSATIONS;
+
+  document.getElementById('convListItems').innerHTML = convs.map(c => `
+    <div class="conv-item ${c.name===activeConv?'active':''}" onclick="selectConv('${c.name}')">
+      <div class="conv-avatar" style="background:${c.color}">${c.avatar}</div>
+      <div class="conv-body">
+        <div class="conv-top">
+          <span class="conv-name">${escHtml(c.name)}</span>
+          <span class="conv-time">${c.time}</span>
+        </div>
+        <div class="conv-preview">${escHtml(c.lastMsg)}</div>
+      </div>
+      ${c.online ? `<div style="width:8px;height:8px;border-radius:50%;background:var(--green-600);flex-shrink:0;margin-top:4px"></div>` : ''}
+    </div>`).join('');
+}
+
+function filterConvs() {
+  renderConvList(document.getElementById('convSearch').value);
+}
+
+function selectConv(name) {
+  activeConv = name;
+  renderConvList(document.getElementById('convSearch').value);
+  renderChat();
+  // Mobile: show chat column
+  document.getElementById('msgShell').classList.add('chat-open');
+}
+
+function renderChat() {
+  const conv = CONVERSATIONS.find(c => c.name === activeConv);
+  const state = getState();
+
+  // Head
+  document.getElementById('chatHead').innerHTML = `
+    <button class="msg-back-btn" onclick="document.getElementById('msgShell').classList.remove('chat-open')">
+      <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg> Back
+    </button>
+    <div class="conv-avatar" style="background:${conv?.color||'#059669'};width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700">${conv?.avatar||'?'}</div>
+    <div>
+      <div style="font-weight:700;font-size:14px">${escHtml(activeConv)}</div>
+      <div class="status">${conv?.online?'Online':'Offline'}</div>
+    </div>
+    <div class="spacer"></div>
+    <a href="bookings.html" class="badge badge-outline" style="font-size:11.5px">View Bookings</a>`;
+
+  // Messages — filter from state by sender or TripMate Support thread
+  const msgs = state.messages.filter(m =>
+    m.sender === activeConv || (activeConv === 'TripMate Support' && (m.out || m.sender === 'TripMate Support'))
+  );
+
+  const userInitials = state.user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  const msgsHtml = msgs.length ? msgs.map(m => `
+    <div class="msg-row ${m.out?'out':'in'}">
+      ${!m.out ? `<div class="conv-avatar" style="background:${m.color||conv?.color||'#059669'};width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;align-self:flex-end">${m.avatar}</div>` : ''}
+      <div>
+        <div class="bubble ${m.out?'out':'in'}">${escHtml(m.text)}</div>
+        <div class="msg-time-label">${m.time||''}</div>
+      </div>
+      ${m.out ? `<div class="conv-avatar" style="background:var(--blue-600);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0;align-self:flex-end">${userInitials}</div>` : ''}
+    </div>`).join('') :
+    `<div style="text-align:center;color:var(--text-faint);font-size:13px;padding:32px">No messages yet. Say hello!</div>`;
+
+  document.getElementById('chatMessages').innerHTML = msgsHtml;
+  document.getElementById('chatMessages').scrollTop = 99999;
+}
+
+function sendMessage() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  const now   = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  const state = getState();
+  const userInitials = state.user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  // Add to state messages
+  state.messages.push({
+    id: Date.now(), sender: state.user.name, avatar: userInitials,
+    color: '#2563eb', text, out: true, time: now
+  });
+  setState(state);
+
+  input.value = '';
+  renderChat();
+
+  // Simulate reply
+  setTimeout(() => {
+    const replies = {
+      'TripMate Support': ["Thanks for reaching out! We'll look into that right away.", "Got it! Our team will follow up within 24 hours.", "Absolutely, I can help with that. Let me check your booking details."],
+      'Delta Airlines':   ["Thank you for contacting Delta Airlines. How can we assist you?", "Your flight status is confirmed. Is there anything else we can help with?"],
+      'Grand Hyatt':      ["Thank you for your message. We look forward to welcoming you soon!", "Our concierge team will be happy to assist with your requests."],
+      'Travel Alerts':    ["Travel alert update: All conditions are normal for your destination.", "New advisory: Please check local regulations before travel."],
+      'Travel Agent':     ["I'm checking availability right now. I'll have options for you shortly!", "Great news — I've found some excellent options for your trip."]
+    };
+    const pool  = replies[activeConv] || ["Thanks for your message! We'll get back to you soon."];
+    const reply = pool[Math.floor(Math.random()*pool.length)];
+    const conv  = CONVERSATIONS.find(c=>c.name===activeConv);
+    const s     = getState();
+    s.messages.push({
+      id: Date.now()+1, sender: activeConv,
+      avatar: conv?.avatar||'?', color: conv?.color||'#059669',
+      text: reply, out: false,
+      time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
+    });
+    setState(s);
+    renderChat();
+  }, 1200 + Math.random()*800);
+}
+
+function startNewMessage() {
+  document.getElementById('newMsgTo').value   = 'TripMate Support';
+  document.getElementById('newMsgText').value = '';
+  document.getElementById('newMsgModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeNewMsg() {
+  document.getElementById('newMsgModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function sendNewMessage() {
+  const to   = document.getElementById('newMsgTo').value;
+  const text = document.getElementById('newMsgText').value.trim();
+  if (!text) { showToast('Please enter a message', 'error'); return; }
+  closeNewMsg();
+  activeConv = to;
+  const state = getState();
+  state.messages.push({
+    id: Date.now(), sender: state.user.name,
+    avatar: state.user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),
+    color: '#2563eb', text, out: true,
+    time: new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
+  });
+  setState(state);
+  renderConvList();
+  renderChat();
+  document.getElementById('msgShell').classList.add('chat-open');
+  showToast(`Message sent to ${to}`, 'success');
+}
+
+// Init
+renderConvList();
+renderChat();
+</script>
+</body>
+</html>

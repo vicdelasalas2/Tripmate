@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookings — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page">
+      <div class="page-title anim-fade-up">Bookings</div>
+      <div id="bookingsContent"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('bookings', { cta: { label:'+ New Booking', href:'new-booking.html' } });
+
+const BK_ICON = { 'Flight':'i-plane', 'Hotel':'i-bed', 'Tour / Excursion':'i-compass' };
+const BK_ICON_SVG = {
+  'i-plane':   `<path d="M10.5 21 12 15.5 4 13v-2l9-3V5a1.6 1.6 0 1 1 3.2 0v3l9 3v2l-8 2.5L20.5 21l-1.7.6L14 17.4l-1.8 4.2z"/>`,
+  'i-bed':     `<path d="M3 19v-8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8M3 15h18M3 19v2M21 19v2"/><rect x="5" y="9" width="6" height="4" rx="1"/>`,
+  'i-compass': `<circle cx="12" cy="12" r="9.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>`
+};
+
+function renderBookings() {
+  const state    = getState();
+  const bookings = state.bookings;
+  const statusClass = s => s==='Confirmed'?'badge-green':s==='Pending'?'badge-amber':'badge-red';
+
+  let html = `
+  <div class="anim-fade-up" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:14px">
+    <div class="pill-tabs">
+      <button class="pill-tab active" data-filter="all">All Bookings (${bookings.length})</button>
+      <button class="pill-tab" data-filter="flights">Flights (${bookings.filter(b=>b.type==='Flight').length})</button>
+      <button class="pill-tab" data-filter="hotels">Hotels (${bookings.filter(b=>b.type==='Hotel').length})</button>
+      <button class="pill-tab" data-filter="tours">Tours &amp; Excursions (${bookings.filter(b=>b.type==='Tour / Excursion').length})</button>
+    </div>
+    <a href="new-booking.html" class="btn btn-primary">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Booking
+    </a>
+  </div>
+
+  <div class="card anim-fade-up delay-1">
+    <div class="table-responsive">
+      <table class="table" id="bkTable">
+        <thead><tr>
+          <th>Booking ID</th>
+          <th>Customer Name</th>
+          <th>Service Provider</th>
+          <th>Travel Dates</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th style="text-align:right">Actions</th>
+        </tr></thead>
+        <tbody>`;
+
+  if (!bookings.length) {
+    html += `<tr><td colspan="7" style="text-align:center;color:var(--text-faint);padding:32px">
+      No bookings yet. <a href="new-booking.html" style="color:var(--blue-600);font-weight:600">Create one →</a>
+    </td></tr>`;
+  }
+
+  bookings.forEach(bk => {
+    const cat  = bk.type === 'Flight' ? 'flights' : bk.type === 'Hotel' ? 'hotels' : 'tours';
+    const icon = BK_ICON[bk.type] || 'i-compass';
+    html += `
+    <tr data-filter-row="${cat}">
+      <td><b>#${escHtml(bk.ref)}</b></td>
+      <td>${escHtml(bk.customer)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <svg style="width:15px;height:15px;stroke:var(--text-muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24">${BK_ICON_SVG[icon]||''}</svg>
+          <span>${escHtml(bk.provider)}</span>
+        </div>
+      </td>
+      <td>${escHtml(bk.dates)}</td>
+      <td><b>$${bk.amount.toLocaleString()}</b></td>
+      <td><span class="badge ${statusClass(bk.status)}">${bk.status}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="table-icon-btn" onclick="openBookingModal(${bk.id})" title="View">
+          <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <a href="new-booking.html?edit=${bk.id}" class="table-icon-btn" title="Edit">
+          <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="m14.5 7 3 3"/></svg>
+        </a>
+        <button class="table-icon-btn" onclick="deleteBooking(${bk.id})" title="Delete">
+          <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>
+
+  <!-- Summary cards -->
+  <div class="grid g-3 anim-fade-up delay-2" style="margin-top:20px">
+    <div class="card card-pad card-hover">
+      <div style="font-size:12px;color:var(--text-faint);margin-bottom:4px">Total Bookings</div>
+      <div style="font-size:22px;font-weight:800">${bookings.length}</div>
+    </div>
+    <div class="card card-pad card-hover">
+      <div style="font-size:12px;color:var(--text-faint);margin-bottom:4px">Total Spent</div>
+      <div style="font-size:22px;font-weight:800">$${bookings.reduce((s,b)=>s+b.amount,0).toLocaleString()}</div>
+    </div>
+    <div class="card card-pad card-hover">
+      <div style="font-size:12px;color:var(--text-faint);margin-bottom:4px">Confirmed</div>
+      <div style="font-size:22px;font-weight:800;color:var(--green-600)">${bookings.filter(b=>b.status==='Confirmed').length}</div>
+    </div>
+  </div>`;
+
+  document.getElementById('bookingsContent').innerHTML = html;
+  tmInitPillTabs();
+}
+
+function deleteBooking(id) {
+  const state = getState();
+  const bk    = state.bookings.find(b => b.id === id);
+  if (!bk) return;
+  showConfirm(`Delete booking #${bk.ref} — ${bk.provider}? This cannot be undone.`, function() {
+    const s = getState();
+    s.bookings = s.bookings.filter(b => b.id !== id);
+    setState(s);
+    renderBookings();
+    showToast(`Booking #${bk.ref} deleted`, 'info');
+  });
+}
+
+renderBookings();
+</script>
+</body>
+</html>

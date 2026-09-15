@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip Builder — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page" id="builderPage"></div>
+  </div>
+</div>
+
+<!-- Add Activity Modal -->
+<div class="tm-modal-overlay" id="addActModal">
+  <div class="tm-modal">
+    <button class="tm-modal-close" onclick="closeActModal()">&times;</button>
+    <div class="tm-modal-icon" style="background:var(--blue-100)">
+      <svg class="icon" style="stroke:var(--blue-600)" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <div class="tm-modal-h">Add Activity</div>
+    <input type="hidden" id="modalDayNum">
+    <div class="field"><label>Time <span class="req">*</span></label><input type="text" id="modalTime" placeholder="e.g. 10:00 AM"></div>
+    <div class="field"><label>Title <span class="req">*</span></label><input type="text" id="modalTitle" placeholder="e.g. Museum Visit"></div>
+    <div class="field"><label>Location</label><input type="text" id="modalLoc" placeholder="e.g. 100 Main St"></div>
+    <div class="field"><label>Description</label><textarea id="modalDesc" rows="3" placeholder="Details…"></textarea></div>
+    <div class="field"><label>Type</label>
+      <select id="modalIcon">
+        <option value="i-pin">📍 Sightseeing</option>
+        <option value="i-plane">✈️ Flight / Transport</option>
+        <option value="i-bed">🏨 Hotel</option>
+        <option value="i-food">🍽️ Dining</option>
+        <option value="i-compass">🧭 Tour / Excursion</option>
+        <option value="i-star">⭐ Experience</option>
+      </select>
+    </div>
+    <div class="tm-modal-footer">
+      <button class="btn btn-outline" onclick="closeActModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addActivity()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('itineraries', { cta: { label:'+ New Trip', href:'new-trip.html' } });
+
+const ICON_EMOJI = { 'i-plane':'✈️','i-bed':'🏨','i-food':'🍽️','i-pin':'📍','i-compass':'🧭','i-star':'⭐','i-info':'ℹ️' };
+let currentTripId = null;
+
+function init() {
+  const state  = getState();
+  const trips  = state.trips;
+  const params = new URLSearchParams(window.location.search);
+  const paramId = parseInt(params.get('trip'));
+  // Prefer the most recently added (highest id) active trip
+  const active  = trips.filter(t=>t.status==='active');
+  currentTripId = paramId || (active.length ? active[active.length-1].id : trips.length ? trips[trips.length-1].id : null);
+  renderBuilder();
+}
+
+function renderBuilder() {
+  const state = getState();
+  const trip  = state.trips.find(t => t.id === currentTripId);
+
+  if (!trip) {
+    document.getElementById('builderPage').innerHTML = `
+      <div style="text-align:center;padding:60px">
+        <p style="color:var(--text-muted);margin-bottom:16px">No trips found. Create a trip first.</p>
+        <a href="new-trip.html" class="btn btn-primary">Create New Trip</a>
+      </div>`;
+    return;
+  }
+
+  const activities = (state.activities||[]).filter(a=>a.tripId===currentTripId);
+  const byDay = {};
+  activities.forEach(a => { if (!byDay[a.dayNumber]) byDay[a.dayNumber]=[]; byDay[a.dayNumber].push(a); });
+  const days  = Object.keys(byDay).map(Number).sort((a,b)=>a-b);
+  const maxDay = days.length ? Math.max(...days) : 0;
+
+  // Calculate budget used
+  const bookings = state.bookings || [];
+  const totalSpent = bookings.reduce((s,b)=>s+b.amount, 0);
+  const budgetPct  = trip.budgetMax ? Math.min(100, Math.round(totalSpent/trip.budgetMax*100)) : 0;
+
+  const start = new Date(trip.startDate+'T00:00:00');
+  const end   = new Date(trip.endDate+'T00:00:00');
+  const tripDays = Math.round((end-start)/86400000)+1;
+
+  let builderHtml = `
+  <div class="page-breadcrumb anim-fade">
+    <a href="itineraries.html">My Itineraries</a> › <a href="new-trip.html?edit=${trip.id}">Trip Details</a> › <span class="current">Builder</span>
+  </div>
+  <div class="page-title anim-fade-up">${escHtml(trip.name)}</div>
+
+  <div class="card card-pad anim-fade-up delay-1" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div>
+      <div style="font-size:13px;color:var(--text-muted)">
+        📍 ${escHtml(trip.destination)} &nbsp;·&nbsp;
+        📅 ${fmtDate(trip.startDate)} – ${fmtDate(trip.endDate)} &nbsp;·&nbsp;
+        👤 ${trip.travelers} traveler${trip.travelers!==1?'s':''}
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <a href="new-trip.html?edit=${trip.id}" class="btn btn-outline btn-sm">Edit Trip Details</a>
+      <a href="itineraries.html" class="btn btn-outline-blue btn-sm">View Full Itinerary</a>
+    </div>
+  </div>
+
+  <div class="grid g-2col">
+    <div class="stack" id="daysStack">`;
+
+  if (!days.length) {
+    builderHtml += `
+      <div class="card card-pad" style="text-align:center;padding:32px;color:var(--text-faint)">
+        <p style="margin-bottom:16px">No activities yet. Start building your day-by-day plan!</p>
+        <button class="btn btn-primary" onclick="openActModal(1)">+ Add First Activity</button>
+      </div>`;
+  }
+
+  days.forEach((dayNum, idx) => {
+    const acts  = byDay[dayNum].sort((a,b)=>a.sortOrder-b.sortOrder);
+    const date  = new Date(start); date.setDate(start.getDate() + dayNum - 1);
+    const label = date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    builderHtml += `
+    <div class="acc-item open anim-fade-up delay-${Math.min(idx+1,5)}">
+      <button class="acc-head">
+        <span class="day-label">Day ${dayNum}</span>
+        <span class="day-title" style="margin-left:4px">— ${label}</span>
+        <svg class="icon chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="acc-body">
+        <div class="timeline">
+          ${acts.map((act,i) => `
+          <div class="tl-row">
+            <div class="tl-time">${escHtml(act.timeSlot)}</div>
+            <div class="tl-rail"><div class="tl-dot"></div>${i<acts.length-1?'<div class="tl-line"></div>':''}</div>
+            <div class="tl-icon"><span style="font-size:14px">${ICON_EMOJI[act.icon]||'📍'}</span></div>
+            <div class="tl-body" style="flex:1">
+              <h4>${escHtml(act.title)}</h4>
+              <p>${act.location?`<span class="loc">${escHtml(act.location)}</span><br>`:''}${escHtml(act.description||'')}</p>
+              <button onclick="removeActivity(${act.id})" style="background:none;border:none;font-size:11.5px;color:var(--text-faint);cursor:pointer;padding:2px 0">✕ Remove</button>
+            </div>
+          </div>`).join('')}
+          <button class="add-activity-link" onclick="openActModal(${dayNum})">
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;margin-right:2px" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Add Activity / Event
+          </button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // Add Day placeholder
+  builderHtml += `<div class="builder-day-add" onclick="openActModal(${maxDay+1})">+ Add Day ${maxDay+1}</div>`;
+  builderHtml += `</div>`; // close daysStack
+
+  // RIGHT: Summary sidebar
+  builderHtml += `
+    <div class="stack">
+      <div class="card card-pad anim-slide-r delay-1">
+        <div class="card-h">Trip Summary</div>
+        <div class="booking-detail-row"><span class="label">Duration</span><span class="value">${tripDays} day${tripDays!==1?'s':''}</span></div>
+        <div class="booking-detail-row"><span class="label">Travelers</span><span class="value">${trip.travelers}</span></div>
+        <div class="booking-detail-row"><span class="label">Type</span><span class="value">${escHtml(trip.type)}</span></div>
+        <div class="booking-detail-row"><span class="label">Accommodation</span><span class="value">${escHtml(trip.accommodation)}</span></div>
+        <div class="booking-detail-row"><span class="label">Activities</span><span class="value">${activities.length}</span></div>
+      </div>
+
+      <div class="card card-pad anim-slide-r delay-2">
+        <div class="card-h">Quick Add</div>
+        <div class="quick-add-chips">
+          <button class="quick-chip" onclick="quickAdd('Flight','i-plane')">✈️ Flight</button>
+          <button class="quick-chip" onclick="quickAdd('Hotel Check-In','i-bed')">🏨 Hotel</button>
+          <button class="quick-chip" onclick="quickAdd('Dining','i-food')">🍽️ Dining</button>
+          <button class="quick-chip" onclick="quickAdd('Sightseeing','i-pin')">📍 Activity</button>
+          <button class="quick-chip" onclick="quickAdd('Tour','i-compass')">🧭 Tour</button>
+          <button class="quick-chip" onclick="quickAdd('Free Time','i-star')">⭐ Free Time</button>
+        </div>
+      </div>
+
+      <div class="card card-pad anim-slide-r delay-3">
+        <div class="card-h">Budget Tracker</div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px">
+          <span style="color:var(--text-muted)">$${totalSpent.toLocaleString()} of $${(trip.budgetMax||0).toLocaleString()}</span>
+          <span style="font-weight:700;color:${budgetPct>90?'var(--red-600)':budgetPct>70?'var(--amber-600)':'var(--green-600)'}">${budgetPct}% used</span>
+        </div>
+        <div class="budget-bar"><div class="budget-bar-fill" id="budgetBarFill" style="width:0%"></div></div>
+        <div style="font-size:12px;color:var(--text-faint);margin-top:8px">Remaining: $${Math.max(0,(trip.budgetMax||0)-totalSpent).toLocaleString()}</div>
+      </div>
+
+      <div class="stack" style="gap:10px">
+        <button class="btn btn-primary btn-block" onclick="saveAndView()">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M4 19h16"/></svg>
+          Save &amp; View Itinerary
+        </button>
+        <a href="itineraries.html" class="btn btn-ghost btn-block">Back to My Itineraries</a>
+      </div>
+    </div>
+  </div>`; // close grid
+
+  document.getElementById('builderPage').innerHTML = builderHtml;
+  tmInitAccordions();
+
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const fill = document.getElementById('budgetBarFill');
+      if (fill) fill.style.width = budgetPct + '%';
+    }, 200);
+  });
+}
+
+function openActModal(dayNum) {
+  document.getElementById('modalDayNum').value = dayNum;
+  document.getElementById('modalTime').value = '';
+  document.getElementById('modalTitle').value = '';
+  document.getElementById('modalLoc').value = '';
+  document.getElementById('modalDesc').value = '';
+  document.getElementById('modalIcon').value = 'i-pin';
+  document.getElementById('addActModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('modalTime').focus();
+}
+
+function closeActModal() {
+  document.getElementById('addActModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function addActivity() {
+  const dayNum = parseInt(document.getElementById('modalDayNum').value);
+  const time   = document.getElementById('modalTime').value.trim();
+  const title  = document.getElementById('modalTitle').value.trim();
+  const loc    = document.getElementById('modalLoc').value.trim();
+  const desc   = document.getElementById('modalDesc').value.trim();
+  const icon   = document.getElementById('modalIcon').value;
+
+  if (!title) { showToast('Please enter a title', 'error'); return; }
+
+  const state = getState();
+  const existing = (state.activities||[]).filter(a=>a.tripId===currentTripId&&a.dayNumber===dayNum);
+  state.activities.push({
+    id: state.nextActivityId, tripId: currentTripId, dayNumber: dayNum,
+    date:'', timeSlot: time||'—', icon, title, description: desc, location: loc,
+    sortOrder: existing.length + 1
+  });
+  state.nextActivityId++;
+  setState(state);
+  closeActModal();
+  renderBuilder();
+  showToast(`"${title}" added to Day ${dayNum}`, 'success');
+}
+
+function quickAdd(title, icon) {
+  const state = getState();
+  const acts  = state.activities||[];
+  const existing = acts.filter(a=>a.tripId===currentTripId);
+  const maxDay   = existing.length ? Math.max(...existing.map(a=>a.dayNumber)) : 0;
+  const dayNum   = maxDay || 1;
+  acts.push({
+    id: state.nextActivityId, tripId: currentTripId, dayNumber: dayNum,
+    date:'', timeSlot:'—', icon, title, description:'', location:'',
+    sortOrder: existing.filter(a=>a.dayNumber===dayNum).length + 1
+  });
+  state.nextActivityId++;
+  setState(state);
+  renderBuilder();
+  showToast(`"${title}" added to Day ${dayNum}`, 'success');
+}
+
+function removeActivity(id) {
+  const state = getState();
+  const act   = state.activities.find(a=>a.id===id);
+  if (!act) return;
+  showConfirm(`Remove "${act.title}"?`, function() {
+    const s = getState();
+    s.activities = s.activities.filter(a=>a.id!==id);
+    setState(s);
+    renderBuilder();
+    showToast('Activity removed', 'info');
+  });
+}
+
+function saveAndView() {
+  showToast('Itinerary saved!', 'success');
+  setTimeout(() => window.location.href = 'itineraries.html', 600);
+}
+
+init();
+</script>
+</body>
+</html>

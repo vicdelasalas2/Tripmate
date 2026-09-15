@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page" id="settingsPage"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('settings', { cta: { label:'Save Settings', href:'#' } });
+
+const TABS = ['profile', 'team', 'payment', 'notifications'];
+let activeTab = 'profile';
+
+// Notification prefs in state
+function getNotifSettings() {
+  const s = getState();
+  return s.notifSettings || {
+    bookingConfirmation: true, bookingCancellation: true, paymentReceived: true,
+    itineraryUpdates: true, weeklySummary: false,
+    newMessages: true, tripReminders: true, priceAlerts: false, systemUpdates: true
+  };
+}
+function saveNotifSettings(settings) {
+  const s = getState(); s.notifSettings = settings; setState(s);
+}
+
+function renderSettings() {
+  const state = getState();
+  const user  = state.user;
+  const notif = getNotifSettings();
+  const initials = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  const tabLabels = { profile:'Profile Details', team:'Team & Roles', payment:'Payment Gateways', notifications:'Notifications' };
+
+  let html = `
+  <div class="page-title anim-fade-up">Settings</div>
+
+  <!-- Tabs -->
+  <div class="tabs anim-fade-up delay-1" style="margin-bottom:24px">
+    ${TABS.map(t => `<button class="tab ${t===activeTab?'active':''}" onclick="switchTab('${t}')">${tabLabels[t]}</button>`).join('')}
+  </div>
+
+  <div id="tabContent">`;
+
+  if (activeTab === 'profile') {
+    html += `
+    <div class="grid g-2col">
+      <div class="stack">
+        <div class="card card-pad anim-fade-up">
+          <div class="settings-section-title">Profile Picture</div>
+          <div class="avatar-upload">
+            <div class="avatar-preview" id="avatarPreview">
+              ${user.avatar ? `<img src="${user.avatar}" alt="Avatar">` : initials}
+            </div>
+            <div>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('avatarFile').click()">Change Avatar</button>
+              <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+              ${user.avatar ? `<button class="btn btn-ghost btn-sm" onclick="removeAvatar()" style="margin-top:6px;display:block">Remove</button>` : ''}
+              <div class="help-text" style="margin-top:6px">JPG or PNG, max 2MB</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-pad anim-fade-up delay-1">
+          <div class="settings-section-title">Personal Information</div>
+          <div class="field-row">
+            <div class="field">
+              <label>First Name</label>
+              <input type="text" id="settFirstName" value="${escHtml(user.name.split(' ')[0]||'')}">
+            </div>
+            <div class="field">
+              <label>Last Name</label>
+              <input type="text" id="settLastName" value="${escHtml(user.name.split(' ').slice(1).join(' ')||'')}">
+            </div>
+          </div>
+          <div class="field">
+            <label>Work Email</label>
+            <input type="email" id="settEmail" value="${escHtml(user.email)}">
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="settPhone" value="${escHtml(user.phone||'')}">
+          </div>
+          <div class="field">
+            <label>Account Type</label>
+            <select id="settAcctType">
+              <option value="traveler" ${user.accountType==='traveler'?'selected':''}>Traveler</option>
+              <option value="agency"   ${user.accountType==='agency'?'selected':''}>Agency Administrator</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card card-pad anim-fade-up delay-2">
+          <div class="settings-section-title">Security</div>
+          <div class="field">
+            <label>Current Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="curPass" placeholder="Enter current password">
+              <button type="button" class="pass-eye" onclick="togglePass('curPass')" style="background:none;border:none;cursor:pointer;position:absolute;right:12px;top:50%;transform:translateY(-50%)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>New Password</label>
+            <div class="pass-wrap">
+              <input type="password" id="newPass" placeholder="Min. 8 characters">
+              <button type="button" class="pass-eye" onclick="togglePass('newPass')" style="background:none;border:none;cursor:pointer;position:absolute;right:12px;top:50%;transform:translateY(-50%)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Confirm New Password</label>
+            <input type="password" id="confPass" placeholder="Repeat new password">
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card card-pad anim-slide-r">
+          <div class="settings-section-title">Travel Preferences</div>
+          <div class="field">
+            <label>Preferred Seat</label>
+            <select id="prefSeat">
+              <option>Window</option><option>Aisle</option><option>No preference</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Meal Preference</label>
+            <select id="prefMeal">
+              <option>Standard</option><option>Vegetarian</option><option>Vegan</option><option>Halal</option><option>Kosher</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Currency</label>
+            <select id="prefCurrency">
+              <option>USD ($)</option><option>EUR (€)</option><option>GBP (£)</option><option>JPY (¥)</option><option>AUD ($)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Home Airport</label>
+            <input type="text" id="homeAirport" placeholder="e.g. JFK, LAX, LHR" value="SFO">
+          </div>
+        </div>
+
+        <div class="card card-pad anim-slide-r delay-1" style="background:linear-gradient(135deg,#3f4fc9,#7c5cf0);color:#fff">
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:6px">🤖 AI Chatbot Key</div>
+          <p style="font-size:12.5px;color:rgba(255,255,255,.7);margin-bottom:14px;line-height:1.5">Connect your Gemini API key to use the AI travel assistant.</p>
+          <input type="password" id="geminiKeyInput" placeholder="AIza…" value="${localStorage.getItem('tripmate_gemini_key')||''}"
+            style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:13px;margin-bottom:10px;font-family:inherit">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;flex:1" onclick="saveGeminiKey()">Save Key</button>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-sm" style="background:rgba(255,255,255,.12);color:rgba(255,255,255,.8)">Get Free Key</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions anim-fade-up delay-3">
+      <button class="btn btn-outline" onclick="renderSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+    </div>`;
+  }
+
+  else if (activeTab === 'team') {
+    const TEAM = [
+      { name:'Sarah Mitchell', email:'sarah.mitchell@agency.com', role:'Administrator', status:'Active',  you:true  },
+      { name:'Jordan Lee',     email:'jordan.lee@agency.com',     role:'Editor',        status:'Active',  you:false },
+      { name:'Mia Patel',      email:'mia.patel@agency.com',      role:'Viewer',        status:'Active',  you:false },
+      { name:'Noah Kim',       email:'noah.kim@agency.com',       role:'Editor',        status:'Pending', you:false },
+      { name:'Ava Chen',       email:'ava.chen@agency.com',       role:'Viewer',        status:'Active',  you:false }
+    ];
+    html += `
+    <div class="anim-fade-up" style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn btn-primary" onclick="inviteMember()">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Invite Member
+      </button>
+    </div>
+    <div class="card anim-fade-up delay-1">
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${TEAM.map(m=>`
+            <tr>
+              <td><strong>${escHtml(m.name)}</strong>${m.you?' <span class="badge badge-blue" style="font-size:10px">You</span>':''}</td>
+              <td style="color:var(--text-muted)">${escHtml(m.email)}</td>
+              <td><span class="badge ${m.role==='Administrator'?'badge-blue':m.role==='Editor'?'badge-amber':'badge-outline'}">${m.role}</span></td>
+              <td><span class="badge ${m.status==='Active'?'badge-green':'badge-amber'}">${m.status}</span></td>
+              <td>
+                ${!m.you?`<button class="table-icon-btn" onclick="changeRole('${m.name}')" title="Change role">
+                  <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/></svg>
+                </button>
+                <button class="table-icon-btn" onclick="removeMember('${m.name}')" title="Remove">
+                  <svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                </button>`:'<span style="color:var(--text-faint);font-size:12px">Owner</span>'}
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid g-3 anim-fade-up delay-2" style="margin-top:20px">
+      ${[
+        { role:'Administrator', perms:['Full access to all features','Manage team members','Configure payment gateways','Delete bookings and trips'] },
+        { role:'Editor',        perms:['Create and edit bookings','Manage itineraries','View all packages','Send messages'] },
+        { role:'Viewer',        perms:['View bookings and trips','Read-only itinerary access','View packages','No editing permissions'] }
+      ].map(r=>`
+      <div class="role-card anim-fade-up">
+        <h4>${r.role}</h4>
+        <div class="role-perms">${r.perms.map(p=>`<div class="role-perm">${p}</div>`).join('')}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  else if (activeTab === 'payment') {
+    const GATEWAYS = [
+      { name:'Stripe',          status:'Connected',     icon:'💳', connected:true  },
+      { name:'PayPal',          status:'Connected',     icon:'🅿️', connected:true  },
+      { name:'Square',          status:'Not Connected', icon:'⬛', connected:false },
+      { name:'Bank Transfer',   status:'Not Connected', icon:'🏦', connected:false }
+    ];
+    html += `
+    <div class="card card-pad anim-fade-up">
+      <div class="settings-section-title">Connected Payment Methods</div>
+      ${GATEWAYS.map(g=>`
+      <div class="payment-row">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px">${g.icon}</div>
+          <div>
+            <div class="payment-name">${g.name}</div>
+            <div class="payment-status">${g.status}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${g.connected ? `
+          <label class="switch">
+            <input type="checkbox" checked onchange="toggleGateway('${g.name}',this.checked)">
+            <div class="track"><div class="thumb"></div></div>
+          </label>
+          <button class="btn btn-outline btn-sm" onclick="disconnectGateway('${g.name}')">Disconnect</button>` :
+          `<button class="btn btn-primary btn-sm" onclick="connectGateway('${g.name}')">Connect</button>`}
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <div class="card card-pad anim-fade-up delay-1" style="margin-top:20px">
+      <div class="settings-section-title">Billing Information</div>
+      <div class="field-row">
+        <div class="field"><label>Company Name</label><input type="text" value="Mitchell Travel Agency"></div>
+        <div class="field"><label>Tax ID / VAT</label><input type="text" placeholder="e.g. US12-3456789"></div>
+      </div>
+      <div class="field"><label>Billing Address</label><input type="text" placeholder="123 Main St, City, State, ZIP"></div>
+      <div class="field-row">
+        <div class="field"><label>Currency</label><select><option>USD ($)</option><option>EUR (€)</option><option>GBP (£)</option></select></div>
+        <div class="field"><label>Tax Rate (%)</label><input type="number" value="8.5" min="0" max="100" step="0.1"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" onclick="renderSettings()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBilling()">Save Billing Info</button>
+      </div>
+    </div>`;
+  }
+
+  else if (activeTab === 'notifications') {
+    html += `
+    <div class="grid g-2col">
+      <div class="stack">
+        <div class="card card-pad anim-fade-up">
+          <div class="settings-section-title">Email Notifications</div>
+          ${[
+            { key:'bookingConfirmation', label:'Booking Confirmation',   desc:'When a booking is confirmed' },
+            { key:'bookingCancellation',  label:'Booking Cancellation',   desc:'When a booking is cancelled' },
+            { key:'paymentReceived',      label:'Payment Received',       desc:'When a payment is processed' },
+            { key:'itineraryUpdates',     label:'Itinerary Updates',      desc:'When your itinerary changes' },
+            { key:'weeklySummary',        label:'Weekly Summary',         desc:'Weekly travel digest every Monday' }
+          ].map(n=>`
+          <div class="notif-row">
+            <div class="notif-info">
+              <strong>${n.label}</strong>
+              <span>${n.desc}</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${notif[n.key]?'checked':''} onchange="toggleNotif('${n.key}',this.checked)">
+              <div class="track"><div class="thumb"></div></div>
+            </label>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card card-pad anim-slide-r">
+          <div class="settings-section-title">Push Notifications</div>
+          ${[
+            { key:'newMessages',    label:'New Messages',     desc:'When you receive a message' },
+            { key:'tripReminders',  label:'Trip Reminders',   desc:'Reminders before your trips' },
+            { key:'priceAlerts',    label:'Price Alerts',     desc:'When package prices drop' },
+            { key:'systemUpdates',  label:'System Updates',   desc:'App updates and announcements' }
+          ].map(n=>`
+          <div class="notif-row">
+            <div class="notif-info">
+              <strong>${n.label}</strong>
+              <span>${n.desc}</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${notif[n.key]?'checked':''} onchange="toggleNotif('${n.key}',this.checked)">
+              <div class="track"><div class="thumb"></div></div>
+            </label>
+          </div>`).join('')}
+        </div>
+
+        <div class="card card-pad anim-slide-r delay-1" style="background:var(--coral-50);border-color:#f2bfb4">
+          <div style="font-size:14px;font-weight:700;color:var(--coral-600);margin-bottom:8px">🔔 Notification Preview</div>
+          <div style="font-size:13px;color:var(--coral-600);line-height:1.6">
+            Active: <strong id="notifCount"></strong> notification type${''}<br>
+            <span id="notifSummary" style="font-size:12px"></span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `</div>`; // tabContent
+  document.getElementById('settingsPage').innerHTML = html;
+  updateNotifCount();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  renderSettings();
+}
+
+function toggleNotif(key, val) {
+  const s = getNotifSettings();
+  s[key] = val;
+  saveNotifSettings(s);
+  updateNotifCount();
+  showToast(`Notification preference updated`, 'success');
+}
+
+function updateNotifCount() {
+  const s   = getNotifSettings();
+  const on  = Object.values(s).filter(Boolean).length;
+  const cnt = document.getElementById('notifCount');
+  const sum = document.getElementById('notifSummary');
+  if (cnt) cnt.textContent = on;
+  if (sum) sum.textContent = on === 0 ? 'All notifications off' : `${on} of ${Object.keys(s).length} active`;
+}
+
+function saveProfile() {
+  const first = document.getElementById('settFirstName')?.value.trim();
+  const last  = document.getElementById('settLastName')?.value.trim();
+  const email = document.getElementById('settEmail')?.value.trim();
+  const phone = document.getElementById('settPhone')?.value.trim();
+  const acct  = document.getElementById('settAcctType')?.value;
+  const cur   = document.getElementById('curPass')?.value;
+  const nw    = document.getElementById('newPass')?.value;
+  const conf  = document.getElementById('confPass')?.value;
+
+  if (nw && nw !== conf) { showToast('New passwords do not match', 'error'); return; }
+  if (nw && nw.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+
+  const state   = getState();
+  state.user    = { ...state.user, name: `${first} ${last}`.trim(), email, phone, accountType: acct };
+  setState(state);
+  showToast('Profile saved successfully!', 'success');
+  renderSettings();
+  // Refresh sidebar avatar
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) { const s2 = document.getElementById('sidebar-mount'); if(s2) s2.outerHTML = tmRenderSidebar('settings'); tmInitMobileNavigation(); }
+}
+
+function saveGeminiKey() {
+  const key = document.getElementById('geminiKeyInput')?.value.trim();
+  if (key) { localStorage.setItem('tripmate_gemini_key', key); showToast('Gemini API key saved!', 'success'); }
+  else { localStorage.removeItem('tripmate_gemini_key'); showToast('API key removed', 'info'); }
+}
+
+function handleAvatarUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2*1024*1024) { showToast('File too large. Max 2MB.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const state  = getState();
+    state.user.avatar = e.target.result;
+    setState(state);
+    renderSettings();
+    showToast('Avatar updated!', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeAvatar() {
+  const state = getState(); state.user.avatar = ''; setState(state);
+  renderSettings(); showToast('Avatar removed', 'info');
+}
+
+function togglePass(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function inviteMember() {
+  const email = prompt('Enter the email address to invite:');
+  if (!email || !email.includes('@')) return;
+  showToast(`Invitation sent to ${email}`, 'success');
+}
+
+function changeRole(name) {
+  const role = prompt(`New role for ${name}:\n1) Administrator\n2) Editor\n3) Viewer\n\nType role name:`);
+  if (role) showToast(`${name}'s role updated to ${role}`, 'success');
+}
+
+function removeMember(name) {
+  showConfirm(`Remove ${name} from the team?`, () => showToast(`${name} removed from team`, 'info'));
+}
+
+function toggleGateway(name, on) { showToast(`${name} ${on?'enabled':'disabled'}`, on?'success':'info'); }
+function connectGateway(name) { showToast(`Connecting to ${name}…`, 'info'); setTimeout(()=>{ showToast(`${name} connected!`,'success'); },1500); }
+function disconnectGateway(name) { showConfirm(`Disconnect ${name}?`, ()=>showToast(`${name} disconnected`,'info')); }
+function saveBilling() { showToast('Billing information saved!', 'success'); }
+
+renderSettings();
+</script>
+</body>
+</html>

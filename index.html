@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TripMate — Plan Amazing Trips with Ease</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  body { background: #fff; }
+  .hero-section { min-height: 80vh; display: flex; align-items: center; justify-content: center; }
+  .hero-inner { max-width: 640px; width: 100%; }
+  .stats-row { display: flex; justify-content: center; gap: 48px; margin-top: 48px; flex-wrap: wrap; }
+  .stat-item { text-align: center; }
+  .stat-item .num { font-size: 28px; font-weight: 800; color: var(--text); }
+  .stat-item .lbl { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .how-section { padding: 80px 40px; background: var(--bg); }
+  .how-section h2 { font-size: 32px; font-weight: 800; text-align: center; margin-bottom: 12px; }
+  .how-sub { text-align: center; color: var(--text-muted); font-size: 15px; margin-bottom: 48px; }
+  .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; max-width: 900px; margin: 0 auto; }
+  .step-card { background: #fff; border-radius: var(--radius-lg); padding: 28px; border: 1px solid var(--border); text-align: center; }
+  .step-num { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg,#3f4fc9,#7c5cf0); color: #fff; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .step-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+  .step-card p { font-size: 13.5px; color: var(--text-muted); line-height: 1.6; }
+  .cta-section { padding: 80px 40px; background: linear-gradient(135deg,#3f4fc9,#7c5cf0 55%,#f2684f); text-align: center; color: #fff; }
+  .cta-section h2 { font-size: 36px; font-weight: 800; margin-bottom: 16px; }
+  .cta-section p { font-size: 16px; opacity: .85; margin-bottom: 32px; }
+  .cta-section .btn-coral { background: rgba(255,255,255,.2); color: #fff; border: 2px solid rgba(255,255,255,.4); }
+  .cta-section .btn-coral:hover { background: rgba(255,255,255,.3); }
+  @media (max-width: 768px) { .hero-section { padding: 60px 24px; min-height: auto; } .how-section, .cta-section { padding: 60px 24px; } .stats-row { gap: 28px; } .hero-h1 { font-size: 38px; } }
+  @media (max-width: 480px) { .hero-h1 { font-size: 30px; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="landing-nav">
+  <div class="landing-logo">
+    <svg viewBox="0 0 40 40" width="32" height="32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b8dff"/><stop offset=".5" stop-color="#8b6bf0"/><stop offset="1" stop-color="#f2684f"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#lg)"/><path d="M8 24c4-9 12-13 18-14" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".85"/><circle cx="27" cy="12" r="2.6" fill="#fff"/><path d="M11 25l16-8" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
+    <span><span class="trip">Trip</span><span class="mate">Mate</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="login.html" class="btn btn-ghost">Sign In</a>
+    <a href="signup.html" class="btn btn-coral">Get Started</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section">
+  <div class="hero-inner" style="text-align:center;padding:0 24px">
+    <div class="hero-badge anim-fade">
+      <svg style="width:14px;height:14px;fill:#f2684f" viewBox="0 0 24 24"><path d="m12 3 2.6 5.9L21 9.6l-4.7 4.3L17.6 21 12 17.7 6.4 21l1.3-7.1L3 9.6l6.4-.7z"/></svg>
+      Your Ultimate Travel Companion
+    </div>
+    <h1 class="hero-h1 anim-fade-up">Plan Amazing Trips<br>with Ease</h1>
+    <p class="hero-sub anim-fade-up delay-1">Organize itineraries, manage bookings, track budgets, and get AI-powered travel recommendations — all in one beautiful dashboard.</p>
+    <div class="hero-ctas anim-fade-up delay-2">
+      <a href="signup.html" class="btn btn-coral btn-lg">Start Planning Free</a>
+      <a href="login.html"  class="btn btn-outline btn-lg">Sign In</a>
+    </div>
+    <div class="stats-row anim-fade-up delay-3">
+      <div class="stat-item"><div class="num">50K+</div><div class="lbl">Happy Travelers</div></div>
+      <div class="stat-item"><div class="num">120+</div><div class="lbl">Destinations</div></div>
+      <div class="stat-item"><div class="num">4.9★</div><div class="lbl">App Rating</div></div>
+      <div class="stat-item"><div class="num">24/7</div><div class="lbl">AI Support</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+  <h2>Everything You Need to Travel Smart</h2>
+  <div class="features-grid">
+    <div class="feature-card anim-fade-up delay-1">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#dbe6fe,#c1d4fd)">
+        <svg class="icon" style="stroke:var(--blue-600)" viewBox="0 0 24 24"><path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>
+      </div>
+      <h3>Smart Itineraries</h3>
+      <p>Build day-by-day travel plans with timeline views, activity management, and exportable PDF itineraries.</p>
+    </div>
+    <div class="feature-card anim-fade-up delay-2">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#fdf1ea,#f9d9cc)">
+        <svg class="icon" style="stroke:var(--coral-500)" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+      </div>
+      <h3>Easy Bookings</h3>
+      <p>Track flights, hotels, and tours in one place. View booking status, reference numbers, and travel dates at a glance.</p>
+    </div>
+    <div class="feature-card anim-fade-up delay-3">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#dcfce7,#bbf0cf)">
+        <svg class="icon" style="stroke:var(--green-600)" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+      </div>
+      <h3>Travel Packages</h3>
+      <p>Browse curated travel packages for every budget and style — from tropical escapes to cultural adventures.</p>
+    </div>
+    <div class="feature-card anim-fade-up delay-1">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe)">
+        <svg class="icon" style="stroke:#7c5cf0;stroke-width:1.8;fill:none" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M12 2v4M8 11V9a4 4 0 0 1 8 0v2"/></svg>
+      </div>
+      <h3>AI Travel Assistant</h3>
+      <p>Ask TripMate AI anything — trip ideas, destination tips, budget advice, packing lists. Powered by Google Gemini.</p>
+    </div>
+    <div class="feature-card anim-fade-up delay-2">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#fef3c7,#fde3a0)">
+        <svg class="icon" style="stroke:var(--amber-600)" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      </div>
+      <h3>Team Messaging</h3>
+      <p>Communicate with travel agents, airlines, and hotels through a clean messaging interface — all in context.</p>
+    </div>
+    <div class="feature-card anim-fade-up delay-3">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#fee2e2,#fecaca)">
+        <svg class="icon" style="stroke:var(--red-600)" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.5" r=".4" fill="currentColor"/></svg>
+      </div>
+      <h3>Packing & Reminders</h3>
+      <p>Interactive packing checklists, trip reminders, and real-time notifications keep you ahead of every journey.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section">
+  <h2>How It Works</h2>
+  <p class="how-sub">Get from idea to boarding pass in four simple steps</p>
+  <div class="steps-grid">
+    <div class="step-card anim-fade-up delay-1">
+      <div class="step-num">1</div>
+      <h3>Create Your Trip</h3>
+      <p>Enter your destination, dates, and travel preferences to start building your itinerary.</p>
+    </div>
+    <div class="step-card anim-fade-up delay-2">
+      <div class="step-num">2</div>
+      <h3>Build Your Plan</h3>
+      <p>Add day-by-day activities, sights, and meals using the intuitive Trip Builder.</p>
+    </div>
+    <div class="step-card anim-fade-up delay-3">
+      <div class="step-num">3</div>
+      <h3>Log Your Bookings</h3>
+      <p>Add flights, hotels, and tours to keep all your confirmations in one spot.</p>
+    </div>
+    <div class="step-card anim-fade-up delay-4">
+      <div class="step-num">4</div>
+      <h3>Travel & Enjoy</h3>
+      <p>Access your itinerary anywhere, get AI tips on the go, and enjoy your trip stress-free.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="cta-section">
+  <h2>Ready for Your Next Adventure?</h2>
+  <p>Join thousands of travellers who plan smarter with TripMate.</p>
+  <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap">
+    <a href="signup.html" class="btn btn-lg" style="background:#fff;color:var(--blue-600);font-weight:800">Get Started Free</a>
+    <a href="dashboard.html" class="btn btn-lg btn-coral">View Demo Dashboard</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="landing-footer">
+  <div>
+    <span class="logo-text" style="font-size:17px;font-weight:800"><span class="trip">Trip</span><span class="mate">Mate</span></span>
+    <div style="margin-top:6px;font-size:12px">© 2026 TripMate. All rights reserved.</div>
+  </div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap">
+    <a href="dashboard.html" style="color:#6b7ea8;font-size:13px">Dashboard</a>
+    <a href="packages.html"  style="color:#6b7ea8;font-size:13px">Packages</a>
+    <a href="bookings.html"  style="color:#6b7ea8;font-size:13px">Bookings</a>
+    <a href="login.html"     style="color:#6b7ea8;font-size:13px">Sign In</a>
+  </div>
+</footer>
+
+</body>
+</html>

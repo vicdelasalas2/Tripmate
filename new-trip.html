@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Trip — TripMate</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="main-col">
+    <div id="mobile-header-mount"></div>
+    <div id="topbar-mount"></div>
+    <div class="page">
+      <div class="page-breadcrumb anim-fade">
+        <a href="itineraries.html">My Itineraries</a>
+        <span>›</span>
+        <span class="current" id="breadcrumbLabel">New Trip</span>
+      </div>
+      <div class="page-title anim-fade-up" id="pageHeading">New Trip</div>
+
+      <form id="tripForm" onsubmit="saveTrip(event)">
+        <div class="grid g-2col">
+          <!-- LEFT: Details -->
+          <div class="stack">
+            <div class="card card-pad anim-fade-up delay-1">
+              <div class="card-h">Trip Details</div>
+
+              <div class="field">
+                <label>Destination <span class="req">*</span></label>
+                <input type="text" id="tripDest" placeholder="e.g. Tokyo, Japan" required>
+              </div>
+
+              <div class="field">
+                <label>Trip Name <span class="req">*</span></label>
+                <input type="text" id="tripName" placeholder="e.g. Japan Cultural Adventure 2026" required>
+              </div>
+
+              <div class="field-row">
+                <div class="field" style="margin-bottom:0">
+                  <label>Trip Type</label>
+                  <select id="tripType">
+                    <option value="Leisure">🌴 Leisure</option>
+                    <option value="Business">💼 Business</option>
+                    <option value="Family">👨‍👩‍👧 Family</option>
+                    <option value="Adventure">🏔️ Adventure</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-bottom:0">
+                  <label>Travelers</label>
+                  <div class="stepper">
+                    <button type="button" onclick="stepTravelers(-1)">−</button>
+                    <span id="travelerCount">2</span>
+                    <button type="button" onclick="stepTravelers(1)">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-pad anim-fade-up delay-2">
+              <div class="card-h">Budget &amp; Preferences</div>
+
+              <div class="budget-display">
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Budget Range</div>
+                <strong id="budgetDisplay">$1,000 – $5,000</strong>
+              </div>
+
+              <div class="field-row">
+                <div class="field" style="margin-bottom:0">
+                  <label>Min Budget ($)</label>
+                  <input type="number" id="budgetMin" value="1000" min="0" oninput="updateBudget()">
+                </div>
+                <div class="field" style="margin-bottom:0">
+                  <label>Max Budget ($)</label>
+                  <input type="number" id="budgetMax" value="5000" min="0" oninput="updateBudget()">
+                </div>
+              </div>
+
+              <div style="height:16px"></div>
+
+              <div class="field-row">
+                <div class="field" style="margin-bottom:0">
+                  <label>Accommodation</label>
+                  <select id="tripAccom">
+                    <option value="Hotel">Hotel</option>
+                    <option value="Hostel">Hostel</option>
+                    <option value="Airbnb">Airbnb</option>
+                    <option value="Resort">Resort</option>
+                    <option value="Camping">Camping</option>
+                    <option value="Flexible">Flexible</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-bottom:0">
+                  <label>Meal Plan</label>
+                  <select id="tripMeal">
+                    <option value="No meals included">No meals included</option>
+                    <option value="Breakfast Included">Breakfast Included</option>
+                    <option value="Half Board">Half Board</option>
+                    <option value="Full Board">Full Board</option>
+                    <option value="All Inclusive">All Inclusive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Dates + Notes -->
+          <div class="stack">
+            <div class="card card-pad anim-slide-r delay-1">
+              <div class="card-h">Travel Dates</div>
+
+              <div class="field">
+                <label>Start Date <span class="req">*</span></label>
+                <input type="date" id="tripStart" required onchange="updateDuration()">
+              </div>
+              <div class="field">
+                <label>End Date <span class="req">*</span></label>
+                <input type="date" id="tripEnd" required onchange="updateDuration()">
+              </div>
+
+              <div class="date-info" id="durationInfo" style="display:none">
+                <strong id="durationText"></strong>
+                <span id="durationSub"></span>
+              </div>
+            </div>
+
+            <div class="card card-pad anim-slide-r delay-2">
+              <div class="card-h">Additional Notes</div>
+              <div class="field" style="margin-bottom:0">
+                <textarea id="tripNotes" rows="5" placeholder="Special requirements, preferences, reminders…" style="resize:vertical"></textarea>
+              </div>
+            </div>
+
+            <div class="card card-pad anim-slide-r delay-3" id="tripStatusCard">
+              <div class="card-h">Status</div>
+              <div class="field" style="margin-bottom:0">
+                <select id="tripStatus">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions anim-fade-up delay-3">
+          <a href="itineraries.html" class="btn btn-ghost">Cancel</a>
+          <button type="button" class="btn btn-outline" onclick="saveTrip(event, true)">Save as Draft</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Create Trip &amp; Open Builder
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/chatbot.js"></script>
+<script>
+tmMountLayout('itineraries', { cta: { label:'+ New Trip', href:'new-trip.html' } });
+
+let travelers = 2;
+let editId    = null;
+
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  editId = parseInt(params.get('edit')) || null;
+
+  // Default start = tomorrow
+  const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
+  const end = new Date(); end.setDate(end.getDate()+8);
+  document.getElementById('tripStart').value = tmr.toISOString().split('T')[0];
+  document.getElementById('tripEnd').value   = end.toISOString().split('T')[0];
+
+  if (editId) {
+    document.getElementById('breadcrumbLabel').textContent = 'Edit Trip';
+    document.getElementById('pageHeading').textContent     = 'Edit Trip';
+    document.getElementById('submitBtn').textContent       = 'Save Changes';
+    loadEditMode(editId);
+  }
+  updateDuration();
+  updateBudget();
+}
+
+function loadEditMode(id) {
+  const state = getState();
+  const trip  = state.trips.find(t => t.id === id);
+  if (!trip) { window.location.href = 'itineraries.html'; return; }
+
+  document.getElementById('tripDest').value  = trip.destination;
+  document.getElementById('tripName').value  = trip.name;
+  document.getElementById('tripType').value  = trip.type;
+  document.getElementById('tripStart').value = trip.startDate;
+  document.getElementById('tripEnd').value   = trip.endDate;
+  document.getElementById('budgetMin').value = trip.budgetMin;
+  document.getElementById('budgetMax').value = trip.budgetMax;
+  document.getElementById('tripAccom').value = trip.accommodation;
+  document.getElementById('tripMeal').value  = trip.mealPlan;
+  document.getElementById('tripNotes').value = trip.notes || '';
+  document.getElementById('tripStatus').value= trip.status;
+  travelers = trip.travelers;
+  document.getElementById('travelerCount').textContent = travelers;
+  updateDuration();
+  updateBudget();
+}
+
+function stepTravelers(delta) {
+  travelers = Math.max(1, travelers + delta);
+  document.getElementById('travelerCount').textContent = travelers;
+}
+
+function updateBudget() {
+  const min = parseInt(document.getElementById('budgetMin').value)||0;
+  const max = parseInt(document.getElementById('budgetMax').value)||0;
+  document.getElementById('budgetDisplay').textContent = `$${min.toLocaleString()} – $${max.toLocaleString()}`;
+}
+
+function updateDuration() {
+  const s = document.getElementById('tripStart').value;
+  const e = document.getElementById('tripEnd').value;
+  const info = document.getElementById('durationInfo');
+  if (!s || !e) { info.style.display = 'none'; return; }
+  const start = new Date(s+'T00:00:00');
+  const end   = new Date(e+'T00:00:00');
+  const days  = Math.round((end - start) / 86400000);
+  if (days < 0) { info.style.display = 'none'; return; }
+  info.style.display = '';
+  document.getElementById('durationText').textContent = `${days} night${days!==1?'s':''} / ${days+1} day${days+1!==1?'s':''}`;
+  document.getElementById('durationSub').textContent  = ` · ${start.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+}
+
+function saveTrip(e, asDraft = false) {
+  e.preventDefault();
+  const dest  = document.getElementById('tripDest').value.trim();
+  const name  = document.getElementById('tripName').value.trim();
+  const start = document.getElementById('tripStart').value;
+  const end   = document.getElementById('tripEnd').value;
+
+  if (!dest || !name || !start || !end) { showToast('Please fill in all required fields', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
+  setTimeout(() => {
+    const state = getState();
+    const tripData = {
+      name, destination: dest,
+      type:          document.getElementById('tripType').value,
+      startDate:     start,
+      endDate:       end,
+      travelers,
+      budgetMin:     parseInt(document.getElementById('budgetMin').value)||0,
+      budgetMax:     parseInt(document.getElementById('budgetMax').value)||0,
+      accommodation: document.getElementById('tripAccom').value,
+      mealPlan:      document.getElementById('tripMeal').value,
+      notes:         document.getElementById('tripNotes').value,
+      status:        asDraft ? 'draft' : document.getElementById('tripStatus').value
+    };
+
+    if (editId) {
+      const trip = state.trips.find(t => t.id === editId);
+      if (trip) Object.assign(trip, tripData);
+    } else {
+      state.trips.push({ id: state.nextTripId, ...tripData });
+      state.nextTripId++;
+    }
+    setState(state);
+
+    if (asDraft) {
+      showToast('Trip saved as draft!', 'success');
+      setTimeout(() => window.location.href = 'itineraries.html', 800);
+    } else {
+      showToast('Trip created!', 'success');
+      setTimeout(() => window.location.href = 'trip-builder.html', 800);
+    }
+  }, 700);
+}
+
+init();
+</script>
+</body>
+</html>
