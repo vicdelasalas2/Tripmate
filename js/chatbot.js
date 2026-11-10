@@ -3,7 +3,7 @@
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 
 // ── API KEY ────────────────────────────────────────────────────
-const GEMINI_API_KEY = 'AQ.Ab8RN6JFny8CS_ICQo8_ZtRrjp-JL0nyqaSvs7RnVHesFgt5Zg';
+const GEMINI_API_KEY = 'AQ.Ab8RN6IPwJwm2m4yhZFmHaSV2ukfay13j5OkqZuqZLi_oLSg0Q';
 // ──────────────────────────────────────────────────────────────
 const GEMINI_MODELS = [
   'gemini-2.5-flash-lite-preview-06-17', // fastest, cheapest — try first
@@ -243,13 +243,13 @@ async function callGemini(userText) {
       const data = await res.json();
 
       if (res.status === 401 || (data?.error?.message || '').toLowerCase().includes('invalid authentication') || (data?.error?.message || '').toLowerCase().includes('oauth')) {
-        throw new Error('❌ Invalid or missing API key. Click ⚙️ API Key below to set your Gemini key. Get one free at aistudio.google.com/app/apikey');
+        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
       }
       if (res.status === 400 && (data?.error?.message || '').toLowerCase().includes('api key')) {
-        throw new Error('❌ Invalid API key. Please check your Gemini key and try again.');
+        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
       }
       if (res.status === 403) {
-        throw new Error('❌ API key not authorized. Make sure your Gemini key is valid. Get one at aistudio.google.com/app/apikey');
+        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
       }
       if (res.status === 429) {
         lastError = new Error('⏳ Rate limit reached. Please wait a moment and try again.');
