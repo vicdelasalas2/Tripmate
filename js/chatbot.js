@@ -1,13 +1,9 @@
 /* ===== TripMate Static — Gemini AI Chatbot ===== */
 
-const CHATBOT_KEY = 'tripmate_gemini_key';
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 
-// ── DEFAULT KEY ────────────────────────────────────────────────
-// Paste your Gemini API key here as a fallback.
-// Get a free key at: https://aistudio.google.com/app/apikey
-// The user can also override this via the ⚙️ button in the chat.
-const GEMINI_KEY_DEFAULT = 'AQ.Ab8RN6JFny8CS_ICQo8_ZtRrjp-JL0nyqaSvs7RnVHesFgt5Zg';
+// ── API KEY ────────────────────────────────────────────────────
+const GEMINI_API_KEY = 'AQ.Ab8RN6JFny8CS_ICQo8_ZtRrjp-JL0nyqaSvs7RnVHesFgt5Zg';
 // ──────────────────────────────────────────────────────────────
 const GEMINI_MODELS = [
   'gemini-2.5-flash-lite-preview-06-17', // fastest, cheapest — try first
@@ -22,7 +18,6 @@ const GEMINI_MODELS = [
 let chatOpen       = false;
 let chatHistory    = [];   // { role: 'user'|'model', parts: [{text}] }
 let isTyping       = false;
-let geminiApiKey = localStorage.getItem(CHATBOT_KEY) || GEMINI_KEY_DEFAULT;
 
 function loadChatHistory() {
   try {
@@ -81,19 +76,12 @@ function injectChatbot() {
       </div>
     </div>
 
-    <!-- API key notice -->
-    <div id="chatKeyNotice" style="display:none;background:var(--amber-50);border-top:1px solid #fde3a0;padding:10px 14px;font-size:12px;color:var(--amber-600);display:flex;align-items:center;gap:8px">
-      <svg style="width:14px;height:14px;stroke:var(--amber-600);fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><path d="M10.3 3.3L2 20h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><path d="M12 9v5"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>
-      <span>Gemini API key required. <button onclick="promptApiKey()" style="background:none;border:none;color:var(--blue-600);font-weight:700;cursor:pointer;padding:0">Set it here</button></span>
-    </div>
-
     <!-- Footer -->
     <div class="chat-win-foot">
       <div class="chat-win-foot-meta">
         <button class="chat-clear-btn" onclick="confirmClearChat()">
           <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg> Clear
         </button>
-        <button onclick="promptApiKey()" style="background:none;border:none;font-size:11px;color:var(--text-faint);cursor:pointer">⚙️ API Key</button>
         <span class="chat-footer-note">AI may make mistakes</span>
       </div>
       <div class="chat-input-row">
@@ -120,37 +108,8 @@ function toggleChat() {
   chatOpen = !chatOpen;
   win.classList.toggle('hidden', !chatOpen);
   if (chatOpen) {
-    checkApiKey();
     scrollChatToBottom();
     document.getElementById('chatInput')?.focus();
-  }
-}
-
-function checkApiKey() {
-  const notice = document.getElementById('chatKeyNotice');
-  if (!notice) return;
-  // Show the notice if no key is stored at all
-  notice.style.display = geminiApiKey ? 'none' : 'flex';
-}
-
-// Called after an auth error to force the notice back on and prompt the user
-function handleAuthError() {
-  // Clear the user-stored key since it's invalid
-  localStorage.removeItem(CHATBOT_KEY);
-  // Fall back to default or empty
-  geminiApiKey = GEMINI_KEY_DEFAULT || '';
-  const notice = document.getElementById('chatKeyNotice');
-  if (notice) notice.style.display = 'flex';
-  promptApiKey();
-}
-
-function promptApiKey() {
-  const key = prompt('Enter your Gemini API key (get one free at https://aistudio.google.com/app/apikey):', geminiApiKey);
-  if (key !== null) {
-    geminiApiKey = key.trim();
-    localStorage.setItem(CHATBOT_KEY, geminiApiKey);
-    checkApiKey();
-    if (geminiApiKey) showToast('API key saved!', 'success');
   }
 }
 
@@ -200,8 +159,6 @@ async function sendChatMessage() {
   const text = input.value.trim();
   if (!text || isTyping) return;
 
-  if (!geminiApiKey) { promptApiKey(); return; }
-
   input.value = '';
   input.style.height = 'auto';
 
@@ -238,13 +195,7 @@ async function sendChatMessage() {
     const errMsg = err.message || 'Something went wrong. Please try again.';
     body.appendChild(buildChatBubble('bot', errMsg, true));
     scrollChatToBottom();
-    // If it's an auth/key error, clear the stored key and re-prompt
-    const isAuthErr = errMsg.includes('Invalid or missing API key') || errMsg.includes('Invalid API key') || errMsg.includes('Authentication failed') || errMsg.includes('API key not authorized');
-    if (isAuthErr) {
-      setTimeout(() => handleAuthError(), 800);
-    } else {
-      showToast(errMsg.replace(/^[❌⏳]\s*/, ''), 'error');
-    }
+    showToast(errMsg.replace(/^[❌⏳]\s*/, ''), 'error');
   } finally {
     isTyping = false;
     updateChatStatus('Your travel assistant');
@@ -283,7 +234,7 @@ async function callGemini(userText) {
   let lastError = null;
   for (const model of GEMINI_MODELS) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const res  = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
