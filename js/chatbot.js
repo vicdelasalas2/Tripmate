@@ -9,8 +9,9 @@ const GROQ_API_KEY = _a.join('');
 // ──────────────────────────────────────────────────────────────
 
 const GROQ_MODELS = [
-  'llama-3.1-8b-instant',    // fastest, free tier
-  'llama-3.3-70b-versatile', // smarter fallback
+  'openai/gpt-oss-20b',   // fastest free model
+  'openai/gpt-oss-120b',  // smarter fallback
+  'qwen/qwen3.8-27b',     // last resort
 ];
 
 // ─────────────────────────────────────────────────────────────
