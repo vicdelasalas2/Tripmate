@@ -7,14 +7,13 @@ const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 // Paste your Gemini API key here as a fallback.
 // Get a free key at: https://aistudio.google.com/app/apikey
 // The user can also override this via the ⚙️ button in the chat.
-const GEMINI_KEY_DEFAULT = 'AQ.Ab8RN6I7fCazZh34kElqu0mqQiG05_OH-lmmOK_QKqZa3qXxWg';
+const GEMINI_KEY_DEFAULT = 'AQ.Ab8RN6JFny8CS_ICQo8_ZtRrjp-JL0nyqaSvs7RnVHesFgt5Zg';
 // ──────────────────────────────────────────────────────────────
 const GEMINI_MODELS = [
-  'gemini-2.5-flash-lite',   // fastest, cheapest — try first
-  'gemini-2.5-flash',        // best price-performance
-  'gemini-3.5-flash',        // previous-gen stable
-  'gemini-3.6-flash',        // previous-gen stable
-  'gemini-3.7-flash',        // fallback
+  'gemini-2.5-flash-lite-preview-06-17', // fastest, cheapest — try first
+  'gemini-2.5-flash',                    // best price-performance
+  'gemini-2.0-flash',                    // stable fallback
+  'gemini-1.5-flash',                    // last-resort fallback
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -240,7 +239,7 @@ async function sendChatMessage() {
     body.appendChild(buildChatBubble('bot', errMsg, true));
     scrollChatToBottom();
     // If it's an auth/key error, clear the stored key and re-prompt
-    const isAuthErr = errMsg.includes('Invalid') || errMsg.includes('authentication') || errMsg.includes('credential') || errMsg.includes('API key');
+    const isAuthErr = errMsg.includes('Invalid or missing API key') || errMsg.includes('Invalid API key') || errMsg.includes('Authentication failed') || errMsg.includes('API key not authorized');
     if (isAuthErr) {
       setTimeout(() => handleAuthError(), 800);
     } else {
