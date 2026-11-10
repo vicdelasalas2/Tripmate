@@ -1,15 +1,17 @@
-/* ===== TripMate Static — Gemini AI Chatbot ===== */
+/* ===== TripMate Static — AI Chatbot (Hugging Face Inference) ===== */
 
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 
 // ── API KEY ────────────────────────────────────────────────────
-const GEMINI_API_KEY = 'AQ.Ab8RN6IPwJwm2m4yhZFmHaSV2ukfay13j5OkqZuqZLi_oLSg0Q';
+// Free Hugging Face token — get one at https://huggingface.co/settings/tokens
+// Use a "Read" token (hf_...). It's free and never expires.
+const HF_API_KEY = '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';
 // ──────────────────────────────────────────────────────────────
-const GEMINI_MODELS = [
-  'gemini-2.5-flash-lite-preview-06-17', // fastest, cheapest — try first
-  'gemini-2.5-flash',                    // best price-performance
-  'gemini-2.0-flash',                    // stable fallback
-  'gemini-1.5-flash',                    // last-resort fallback
+
+const HF_MODELS = [
+  'Qwen/Qwen2.5-7B-Instruct',       // fast, smart, free tier
+  'mistralai/Mistral-7B-Instruct-v0.3', // fallback
+  'google/gemma-2-2b-it',           // last resort
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -184,7 +186,7 @@ async function sendChatMessage() {
   scrollChatToBottom();
 
   try {
-    const reply = await callGemini(text);
+    const reply = await callAI(text);
     typingEl.remove();
     chatHistory.push({ role: 'model', parts: [{ text: reply }] });
     saveChatHistory();
@@ -214,75 +216,71 @@ function updateChatStatus(text) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// GEMINI API CALL
+// HUGGING FACE API CALL
 // ─────────────────────────────────────────────────────────────
-async function callGemini(userText) {
+async function callAI(userText) {
   const systemPrompt = buildSystemPrompt();
 
-  // Trim history for request (last 20 turns = 40 messages)
-  const historyForApi = chatHistory.slice(Math.max(0, chatHistory.length - 40));
+  // Convert stored Gemini-format history {role, parts:[{text}]}
+  // to standard {role, content} format for HF/OpenAI API
+  const historyForApi = chatHistory.slice(Math.max(0, chatHistory.length - 20)).map(m => ({
+    role:    m.role === 'model' ? 'assistant' : m.role,
+    content: m.parts?.[0]?.text ?? m.content ?? ''
+  }));
 
-  const payload = {
-    system_instruction: { parts: [{ text: systemPrompt }] },
-    contents: historyForApi,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 1024
-    }
-  };
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...historyForApi
+  ];
 
   let lastError = null;
-  for (const model of GEMINI_MODELS) {
+  for (const model of HF_MODELS) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-      const res  = await fetch(url, {
+      const url = `https://router.huggingface.co/hf-inference/models/${model}/v1/chat/completions`;
+      const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${HF_API_KEY}`
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: 1024,
+          temperature: 0.7
+        })
       });
+
       const data = await res.json();
 
-      // DEBUG — remove after diagnosis
-      if (!res.ok) console.error('Gemini error:', res.status, JSON.stringify(data?.error));
-
-      if (res.status === 401 || (data?.error?.message || '').toLowerCase().includes('invalid authentication') || (data?.error?.message || '').toLowerCase().includes('oauth')) {
-        throw new Error('❌ ' + (data?.error?.message || 'Auth error 401'));
-      }
-      if (res.status === 400 && (data?.error?.message || '').toLowerCase().includes('api key')) {
-        throw new Error('❌ ' + (data?.error?.message || 'Bad request 400'));
-      }
-      if (res.status === 403) {
-        throw new Error('❌ ' + (data?.error?.message || 'Forbidden 403'));
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('❌ Invalid API token. Please check your Hugging Face token.');
       }
       if (res.status === 429) {
         lastError = new Error('⏳ Rate limit reached. Please wait a moment and try again.');
         continue;
       }
-      if (res.status === 404 || (data?.error?.message || '').includes('not found')) {
-        lastError = new Error(data?.error?.message || `Model not available (${res.status})`);
+      if (res.status === 503 || res.status === 504) {
+        lastError = new Error('Model is loading, please try again in a moment.');
         continue;
       }
       if (!res.ok) {
-        const msg = data?.error?.message || '';
-        if (msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('credential')) {
-          throw new Error('❌ Authentication failed. Click ⚙️ API Key to set a valid Gemini key.');
-        }
-        lastError = new Error(msg || `API error ${res.status}`);
+        lastError = new Error(data?.error?.message || data?.error || `API error ${res.status}`);
         continue;
       }
 
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const text = data?.choices?.[0]?.message?.content;
       if (!text) {
         lastError = new Error('No response from AI. Please try again.');
         continue;
       }
       return text;
     } catch (err) {
-      if (err.message.includes('Invalid API key')) throw err;
+      if (err.message.includes('Invalid API token')) throw err;
       lastError = err;
     }
   }
-  throw lastError || new Error('Could not reach Gemini API. Check your connection.');
+  throw lastError || new Error('Could not reach AI service. Check your connection.');
 }
 
 function buildSystemPrompt() {
