@@ -242,14 +242,17 @@ async function callGemini(userText) {
       });
       const data = await res.json();
 
+      // DEBUG — remove after diagnosis
+      if (!res.ok) console.error('Gemini error:', res.status, JSON.stringify(data?.error));
+
       if (res.status === 401 || (data?.error?.message || '').toLowerCase().includes('invalid authentication') || (data?.error?.message || '').toLowerCase().includes('oauth')) {
-        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
+        throw new Error('❌ ' + (data?.error?.message || 'Auth error 401'));
       }
       if (res.status === 400 && (data?.error?.message || '').toLowerCase().includes('api key')) {
-        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
+        throw new Error('❌ ' + (data?.error?.message || 'Bad request 400'));
       }
       if (res.status === 403) {
-        throw new Error('❌ The AI service is temporarily unavailable. Please try again later.');
+        throw new Error('❌ ' + (data?.error?.message || 'Forbidden 403'));
       }
       if (res.status === 429) {
         lastError = new Error('⏳ Rate limit reached. Please wait a moment and try again.');
