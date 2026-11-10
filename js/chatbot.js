@@ -1,16 +1,17 @@
-/* ===== TripMate Static — AI Chatbot (Hugging Face Inference) ===== */
+/* ===== TripMate Static — AI Chatbot (Groq) ===== */
 
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 
 // ── API KEY ────────────────────────────────────────────────────
-const _a = ['hf_iHsRFqXGF', 'xqsKIbkapng', 'KXELIcIIHFHbSd'];
-const HF_API_KEY = _a.join('');
+// Groq free API — get one at https://console.groq.com
+const _a = ['gsk_VSuBD5V1hrKEh', 'IMR90AzWGdyb3FY', 'BoV1DMzgRCxXBrUFNZqbmqki'];
+const GROQ_API_KEY = _a.join('');
 // ──────────────────────────────────────────────────────────────
 
-const HF_MODELS = [
-  'Qwen/Qwen2.5-7B-Instruct',       // fast, smart, free tier
-  'mistralai/Mistral-7B-Instruct-v0.3', // fallback
-  'google/gemma-2-2b-it',           // last resort
+const GROQ_MODELS = [
+  'llama-3.1-8b-instant',   // fastest, free tier
+  'llama3-8b-8192',         // fallback
+  'gemma2-9b-it',           // last resort
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -215,13 +216,11 @@ function updateChatStatus(text) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// HUGGING FACE API CALL
+// GROQ API CALL
 // ─────────────────────────────────────────────────────────────
 async function callAI(userText) {
   const systemPrompt = buildSystemPrompt();
 
-  // Convert stored Gemini-format history {role, parts:[{text}]}
-  // to standard {role, content} format for HF/OpenAI API
   const historyForApi = chatHistory.slice(Math.max(0, chatHistory.length - 20)).map(m => ({
     role:    m.role === 'model' ? 'assistant' : m.role,
     content: m.parts?.[0]?.text ?? m.content ?? ''
@@ -233,14 +232,13 @@ async function callAI(userText) {
   ];
 
   let lastError = null;
-  for (const model of HF_MODELS) {
+  for (const model of GROQ_MODELS) {
     try {
-      const url = `https://router.huggingface.co/hf-inference/models/${model}/v1/chat/completions`;
-      const res = await fetch(url, {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${HF_API_KEY}`
+          'Authorization': `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
           model,
@@ -253,18 +251,14 @@ async function callAI(userText) {
       const data = await res.json();
 
       if (res.status === 401 || res.status === 403) {
-        throw new Error('❌ Invalid API token. Please check your Hugging Face token.');
+        throw new Error('❌ Invalid API key. Please check your Groq key.');
       }
       if (res.status === 429) {
         lastError = new Error('⏳ Rate limit reached. Please wait a moment and try again.');
         continue;
       }
-      if (res.status === 503 || res.status === 504) {
-        lastError = new Error('Model is loading, please try again in a moment.');
-        continue;
-      }
       if (!res.ok) {
-        lastError = new Error(data?.error?.message || data?.error || `API error ${res.status}`);
+        lastError = new Error(data?.error?.message || `API error ${res.status}`);
         continue;
       }
 
@@ -275,7 +269,7 @@ async function callAI(userText) {
       }
       return text;
     } catch (err) {
-      if (err.message.includes('Invalid API token')) throw err;
+      if (err.message.startsWith('❌')) throw err;
       lastError = err;
     }
   }
