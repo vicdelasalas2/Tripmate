@@ -9,9 +9,8 @@ const GROQ_API_KEY = _a.join('');
 // ──────────────────────────────────────────────────────────────
 
 const GROQ_MODELS = [
-  'llama-3.1-8b-instant',   // fastest, free tier
-  'llama3-8b-8192',         // fallback
-  'gemma2-9b-it',           // last resort
+  'llama-3.1-8b-instant',    // fastest, free tier
+  'llama-3.3-70b-versatile', // smarter fallback
 ];
 
 // ─────────────────────────────────────────────────────────────
