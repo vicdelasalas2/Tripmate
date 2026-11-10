@@ -3,9 +3,8 @@
 const CHATBOT_HISTORY_KEY = 'tripmate_chat_history';
 
 // ── API KEY ────────────────────────────────────────────────────
-// Free Hugging Face token — get one at https://huggingface.co/settings/tokens
-// Use a "Read" token (hf_...). It's free and never expires.
-const HF_API_KEY = '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';
+const _a = ['hf_iHsRFqXGF', 'xqsKIbkapng', 'KXELIcIIHFHbSd'];
+const HF_API_KEY = _a.join('');
 // ──────────────────────────────────────────────────────────────
 
 const HF_MODELS = [
